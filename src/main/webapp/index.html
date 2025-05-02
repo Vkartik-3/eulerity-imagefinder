@@ -1,0 +1,865 @@
+<!-- <html>
+<head>
+</head>
+<body>
+	<h1>Eulerity Take-Home Challenge</h1>
+
+	<h2>How it works</h2>
+	<ul>
+		<li>Pressing the submit button on this page will make a POST
+			request to /main</li>
+		<li>That request will contain a form parameter with the url
+			populated in the input box below</li>
+		<li>The ImageFinder servlet will respond to the request with a
+			list of image urls</li>
+		<li>This page contains javascript to send the request and use the
+			response to build a list of images</li>
+	</ul>
+	<h2>Backend Developers</h2>
+	<ul>
+		<li>You can update the ImageFinder servlet to add crawling logic</li>
+		<li>Feel free to add as many classes/packages/files/third party
+			libraries as you'd like</li>
+		<li>We recommend JSoup for parsing web pages</li>
+		<li>You can update this page's html/css/style if you plan on
+			improving the interface</li>
+		<li>Your final submission does not need to contain any of the
+			files included herein</li>
+		<li>This project is just skeleton code so you can hit the ground
+			running.</li>
+		<li>Some ideas:
+			<ul>
+			<li>Crawl not only the given url, but other pages in the same domain</li>
+			<li>Make your crawler multithreaded to speed up response times</li>
+			<li>Be a friendly crawler and try not to hammer a site</li>
+			<li>Think about how to identify different classes of images and do they need special handling</li>
+			<li>Can you identify images as logos? Perhaps collect favicons?</li>
+			<li>Can you mark images that contain people?</li>
+			</ul>
+		</li>
+	</ul>
+	<h2>Important Notes</h2>
+	<p>Congratulations on making it this far into the interview
+		process!</p>
+	<p>
+	This is a free-form hackathon for a very important reason. We wish to see what ideas you can bring to the table.
+	</p>
+	<p><strong>If your submission only contains 5-10 lines of new code, please think twice about submitting it.</strong> If you need more time, you can ask for it.
+	</p>
+	<p>
+	You can use one of the ideas above, but feel free to go off and build something completely different. 
+	The important thing is to submit something that highlights your strengths as a developer.
+	</p>
+	<p>
+	  <b>Remember, this is your chance to show off how you can best contribute to our team.</b>
+	</p>
+	<p>Please remember to think about good design and code style. Comments in your code are great, but thought should also be taken in how to name your variables and method.</p>
+
+
+
+	<div class="content">
+		<div class="input">
+			<form>
+				<input type="text" name="url">
+			</form>
+			<button type="button">Submit!</button>
+		</div>
+		<div class="output">
+			<ul class="results">
+
+			</ul>
+		</div>
+	</div>
+	<script>
+		var resultList = document.querySelector('ul.results');
+		var urlInput = document.querySelector('input[name=url]')
+
+		apiCallBack = function(xhr, callback) {
+			if (xhr.readyState == XMLHttpRequest.DONE) {
+				if (xhr.status != 200) {
+					let message = xhr.status + ":" + xhr.statusText + ":"
+							+ xhr.responseText;
+					alert(message);
+					throw 'API call returned bad code: ' + xhr.status;
+				}
+				let response = xhr.responseText ? JSON.parse(xhr.responseText)
+						: null;
+				if (callback) {
+					callback(response);
+				}
+			}
+		}
+
+		updateList = function(response) {
+			resultList.innerHTML = '';
+			for (var i = 0; i < response.length; i++) {
+				var img = document.createElement("img");
+				img.width = 200;
+				img.src = response[i];
+				resultList.appendChild(img);
+			}
+		}
+
+		makeApiCall = function(url, method, obj, callback) {
+			let xhr = new XMLHttpRequest();
+			xhr.open(method, url);
+			xhr.onreadystatechange = apiCallBack.bind(null, xhr, callback);
+			xhr.send(obj ? obj instanceof FormData || obj.constructor == String ? obj : JSON.stringify(obj) : null);
+		}
+
+		document.querySelector('button').addEventListener("click", function(event) {
+			event.preventDefault();
+			makeApiCall('/main?url=' + urlInput.value, 'POST', null, updateList);
+		});
+	</script>
+</body>
+
+</html> -->
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eulerity Image Finder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a86e8;
+            --secondary-color: #6aa84f;
+            --accent-color: #f1c232;
+            --dark-color: #333333;
+            --light-color: #f9f9f9;
+            --error-color: #cc0000;
+            --success-color: #6aa84f;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: var(--light-color);
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            margin: 20px 0 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input {
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background-color: #3a76d8;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #status-card {
+            display: none;
+        }
+
+        .progress-container {
+            background-color: #eee;
+            border-radius: 5px;
+            height: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background-color: var(--primary-color);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .status-text {
+            text-align: center;
+            font-size: 14px;
+            color: var(--dark-color);
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-container {
+            margin-top: 30px;
+        }
+
+        .filter-controls {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-btn {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .image-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            position: relative;
+            height: 250px;
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .image-container {
+            height: 200px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .image-info {
+            padding: 10px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .image-url {
+            font-size: 12px;
+            color: #777;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .image-dimensions {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .image-page-found {
+            font-size: 11px;
+            color: #777;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logo-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .download-btn {
+            margin-top: 5px;
+            padding: 4px 8px;
+            background-color: var(--secondary-color);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            font-size: 12px;
+            transition: var(--transition);
+        }
+        
+        .download-btn:hover {
+            background-color: #599b41;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: var(--border-radius);
+            display: none;
+        }
+
+        .success-message {
+            color: var(--success-color);
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-radius: var(--border-radius);
+            display: none;
+        }
+
+        .info-section {
+            margin-top: 40px;
+        }
+
+        .info-section p {
+            margin-bottom: 15px;
+        }
+
+        .info-section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .info-section li {
+            margin-bottom: 5px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .results-grid {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .form-row .form-group {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Eulerity Image Finder</h1>
+            <p>Enter a URL below to find all images on the website</p>
+        </header>
+
+        <div class="card">
+            <form id="crawl-form">
+                <div class="form-group">
+                    <label for="url">Website URL</label>
+                    <input type="text" id="url" name="url" placeholder="https://example.com" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="maxPages">Max Pages to Crawl</label>
+                        <input type="number" id="maxPages" name="maxPages" value="100" min="1" max="500">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="threadCount">Thread Count</label>
+                        <input type="number" id="threadCount" name="threadCount" value="8" min="1" max="32">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="crawlDelay">Crawl Delay (ms)</label>
+                        <input type="number" id="crawlDelay" name="crawlDelay" value="200" min="0" max="2000">
+                    </div>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="detectLogos" name="detectLogos" checked>
+                    <label for="detectLogos">Detect Logo Images</label>
+                </div>
+                
+                <button type="submit" id="submit-btn">Start Crawling</button>
+            </form>
+            
+            <div class="error-message" id="error-message"></div>
+            <div class="success-message" id="success-message"></div>
+        </div>
+        
+        <div class="card" id="status-card">
+            <h2>Crawling Status</h2>
+            <div class="loader" id="loader"></div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <p class="status-text" id="status-text">Initializing crawler...</p>
+            <button id="stop-btn">Stop Crawling</button>
+        </div>
+        
+        <div class="results-container" id="results-container" style="display: none;">
+            <h2>Found Images</h2>
+            
+            <div class="filter-controls">
+                <span>Filter: </span>
+                <button class="filter-btn active" data-filter="all">All Images</button>
+                <button class="filter-btn" data-filter="logo">Logos Only</button>
+                <span id="image-count"></span>
+            </div>
+            
+            <div class="results-grid" id="results-grid"></div>
+        </div>
+        
+        <div class="info-section">
+            <h2>About This Tool</h2>
+            <p>This web crawler tool finds all images on a website by crawling the domain pages. Key features include:</p>
+            <ul>
+                <li>Multi-threaded crawling for faster results</li>
+                <li>Stay within the same domain as the input URL</li>
+                <li>Avoid re-crawling pages that have already been visited</li>
+                <li>Logo detection to identify potential brand images</li>
+                <li>Rate limiting to be a "friendly" crawler</li>
+                <li>Respects robots.txt file for ethical crawling</li>
+            </ul>
+            
+            <p>For best results, try using URLs of content-rich websites. The crawler respects robots.txt and implements a crawl delay to avoid overloading servers.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const form = document.getElementById('crawl-form');
+            const submitBtn = document.getElementById('submit-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const urlInput = document.getElementById('url');
+            const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
+            const statusCard = document.getElementById('status-card');
+            const progressBar = document.getElementById('progress-bar');
+            const statusText = document.getElementById('status-text');
+            const resultsContainer = document.getElementById('results-container');
+            const resultsGrid = document.getElementById('results-grid');
+            const imageCount = document.getElementById('image-count');
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            
+            // Variables
+            let crawlInProgress = false;
+            let statusCheckInterval;
+            let imageResults = [];
+            
+            // Event listeners
+            form.addEventListener('submit', startCrawling);
+            stopBtn.addEventListener('click', stopCrawling);
+            
+            // Set up filter buttons
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    // Apply filter
+                    filterImages(this.getAttribute('data-filter'));
+                });
+            });
+            
+            /**
+             * Start the crawling process
+             */
+            function startCrawling(e) {
+                e.preventDefault();
+                
+                if (crawlInProgress) {
+                    return;
+                }
+                
+                // Get form data
+                const url = urlInput.value.trim();
+                const maxPages = document.getElementById('maxPages').value;
+                const threadCount = document.getElementById('threadCount').value;
+                const crawlDelay = document.getElementById('crawlDelay').value;
+                const detectLogos = document.getElementById('detectLogos').checked;
+                
+                // Validate URL
+                if (!url || !isValidUrl(url)) {
+                    showError('Please enter a valid URL');
+                    return;
+                }
+                
+                // Hide previous results and messages
+                hideMessages();
+                resultsContainer.style.display = 'none';
+                resultsGrid.innerHTML = '';
+                imageResults = [];
+                
+                // Show status card
+                statusCard.style.display = 'block';
+                progressBar.style.width = '0%';
+                statusText.textContent = 'Initializing crawler...';
+                
+                // Disable form fields
+                toggleFormFields(true);
+                crawlInProgress = true;
+                
+                // Make API request
+                const apiUrl = `/main?url=${encodeURIComponent(url)}&maxPages=${maxPages}&threadCount=${threadCount}&crawlDelay=${crawlDelay}&detectLogos=${detectLogos}`;
+                
+                fetch(apiUrl, {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.error || 'An error occurred');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Process results
+                    processResults(data);
+                    showSuccess(`Found ${data.length} images on ${url}`);
+                })
+                .catch(error => {
+                    showError(error.message);
+                })
+                .finally(() => {
+                    // Re-enable form fields
+                    toggleFormFields(false);
+                    crawlInProgress = false;
+                    statusCard.style.display = 'none';
+                    clearInterval(statusCheckInterval);
+                });
+                
+                // Start status check
+                startStatusCheck(url);
+            }
+            
+            /**
+             * Start checking the status of the crawl
+             */
+            function startStatusCheck(url) {
+                const statusUrl = `/main?url=${encodeURIComponent(url)}&action=status`;
+                let pagesCrawled = 0;
+                
+                statusCheckInterval = setInterval(() => {
+                    fetch(statusUrl, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'running') {
+                            // Update progress
+                            pagesCrawled = data.pagesCrawled;
+                            const progress = Math.min((pagesCrawled / parseInt(document.getElementById('maxPages').value)) * 100, 100);
+                            progressBar.style.width = `${progress}%`;
+                            statusText.textContent = `Crawling in progress... (${pagesCrawled} pages crawled)`;
+                        } else if (data.status === 'completed') {
+                            // Crawling completed
+                            clearInterval(statusCheckInterval);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking status:', error);
+                    });
+                }, 1000);
+            }
+            
+            /**
+             * Stop the crawling process
+             */
+            function stopCrawling() {
+                clearInterval(statusCheckInterval);
+                statusCard.style.display = 'none';
+                toggleFormFields(false);
+                crawlInProgress = false;
+                showError('Crawling stopped by user');
+            }
+            
+            /**
+             * Process and display the results
+             */
+            function processResults(data) {
+                imageResults = data;
+                
+                // Clear previous results
+                resultsGrid.innerHTML = '';
+                
+                // Update image count
+                imageCount.textContent = `(${data.length} images found)`;
+                
+                // Display each image
+                data.forEach((image, index) => {
+                    const imageCard = document.createElement('div');
+                    imageCard.className = 'image-card';
+                    imageCard.dataset.isLogo = image.logo || false;
+                    
+                    // Create image container
+                    const imageContainer = document.createElement('div');
+                    imageContainer.className = 'image-container';
+                    
+                    // Create image element
+                    const img = document.createElement('img');
+                    img.src = image.url;
+                    img.alt = image.altText || `Image ${index + 1}`;
+                    img.onerror = function() {
+                        this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20fill%3D%22%23f5f5f5%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.35em%22%20text-anchor%3D%22middle%22%20x%3D%2250%22%20y%3D%2250%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E';
+                    };
+                    
+                    imageContainer.appendChild(img);
+                    imageCard.appendChild(imageContainer);
+                    
+                    // Create image info
+                    const imageInfo = document.createElement('div');
+                    imageInfo.className = 'image-info';
+                    
+                    // Create URL text
+                    const imageUrl = document.createElement('div');
+                    imageUrl.className = 'image-url';
+                    imageUrl.title = image.url;
+                    imageUrl.textContent = image.url;
+                    imageInfo.appendChild(imageUrl);
+                    
+                    // Add dimensions if available
+                    if (image.width > 0 && image.height > 0) {
+                        const dimensions = document.createElement('div');
+                        dimensions.className = 'image-dimensions';
+                        dimensions.textContent = `${image.width} × ${image.height}`;
+                        imageInfo.appendChild(dimensions);
+                    }
+                    
+                    // Add page found info if available
+                    if (image.pageFound) {
+                        const pageFound = document.createElement('div');
+                        pageFound.className = 'image-page-found';
+                        pageFound.title = image.pageFound;
+                        pageFound.textContent = `Found on: ${new URL(image.pageFound).pathname}`;
+                        imageInfo.appendChild(pageFound);
+                    }
+                    
+                    // Add logo badge if applicable
+                    if (image.logo) {
+                        const logoBadge = document.createElement('div');
+                        logoBadge.className = 'logo-badge';
+                        logoBadge.textContent = 'Logo';
+                        imageCard.appendChild(logoBadge);
+                    }
+                    
+                    // Add download button
+                    const downloadBtn = document.createElement('a');
+                    downloadBtn.className = 'download-btn';
+                    downloadBtn.href = image.url;
+                    downloadBtn.target = '_blank';
+                    downloadBtn.download = '';
+                    downloadBtn.textContent = 'Download';
+                    downloadBtn.addEventListener('click', function(e) {
+                        // For some browsers that don't support download attribute
+                        // this prevents the browser from navigating to the image
+                        if (!this.download) {
+                            e.preventDefault();
+                            window.open(this.href);
+                        }
+                    });
+                    imageInfo.appendChild(downloadBtn);
+                    
+                    imageCard.appendChild(imageInfo);
+                    resultsGrid.appendChild(imageCard);
+                });
+                
+                // Show results
+                resultsContainer.style.display = 'block';
+                
+                // Apply default filter (all)
+                filterImages('all');
+            }
+            
+            /**
+             * Filter images by type
+             */
+            function filterImages(filter) {
+                const imageCards = document.querySelectorAll('.image-card');
+                
+                imageCards.forEach(card => {
+                    if (filter === 'all') {
+                        card.style.display = 'block';
+                    } else if (filter === 'logo') {
+                        card.style.display = card.dataset.isLogo === 'true' ? 'block' : 'none';
+                    }
+                });
+                
+                // Update count
+                const visibleCount = Array.from(imageCards).filter(card => card.style.display !== 'none').length;
+                imageCount.textContent = `(${visibleCount} of ${imageResults.length} images)`;
+            }
+            
+            /**
+             * Toggle form fields and button state
+             */
+            function toggleFormFields(disabled) {
+                const formElements = form.elements;
+                for (let i = 0; i < formElements.length; i++) {
+                    formElements[i].disabled = disabled;
+                }
+                submitBtn.disabled = disabled;
+            }
+            
+            /**
+             * Show error message
+             */
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+            }
+            
+            /**
+             * Show success message
+             */
+            function showSuccess(message) {
+                successMessage.textContent = message;
+                successMessage.style.display = 'block';
+                errorMessage.style.display = 'none';
+            }
+            
+            /**
+             * Hide all messages
+             */
+            function hideMessages() {
+                errorMessage.style.display = 'none';
+                successMessage.style.display = 'none';
+            }
+            
+            /**
+             * Validate URL format
+             */
+            function isValidUrl(url) {
+                try {
+                    // Add protocol if missing
+                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        url = 'https://' + url;
+                    }
+                    new URL(url);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
