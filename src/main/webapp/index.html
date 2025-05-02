@@ -116,9 +116,6 @@
 
 </html> -->
 
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -700,6 +697,9 @@
                 // Clear previous results
                 resultsGrid.innerHTML = '';
                 
+                // Debug log to check data structure
+                console.log("First few results:", data.slice(0, 3));
+                
                 // Update image count
                 imageCount.textContent = `(${data.length} images found)`;
                 
@@ -707,7 +707,10 @@
                 data.forEach((image, index) => {
                     const imageCard = document.createElement('div');
                     imageCard.className = 'image-card';
-                    imageCard.dataset.isLogo = image.logo || false;
+                    
+                    // FIXED: Check for both isLogo and logo properties
+                    // Convert to string 'true' or 'false' for dataset
+                    imageCard.dataset.isLogo = (image.isLogo === true || image.logo === true) ? 'true' : 'false';
                     
                     // Create image container
                     const imageContainer = document.createElement('div');
@@ -748,12 +751,19 @@
                         const pageFound = document.createElement('div');
                         pageFound.className = 'image-page-found';
                         pageFound.title = image.pageFound;
-                        pageFound.textContent = `Found on: ${new URL(image.pageFound).pathname}`;
+                        
+                        try {
+                            const pathname = new URL(image.pageFound).pathname;
+                            pageFound.textContent = `Found on: ${pathname}`;
+                        } catch (e) {
+                            pageFound.textContent = `Found on: ${image.pageFound}`;
+                        }
+                        
                         imageInfo.appendChild(pageFound);
                     }
                     
-                    // Add logo badge if applicable
-                    if (image.logo) {
+                    // FIXED: Check for both isLogo and logo properties
+                    if (image.isLogo === true || image.logo === true) {
                         const logoBadge = document.createElement('div');
                         logoBadge.className = 'logo-badge';
                         logoBadge.textContent = 'Logo';
@@ -795,6 +805,9 @@
                 const imageCards = document.querySelectorAll('.image-card');
                 
                 imageCards.forEach(card => {
+                    // Debug the dataset value to see what's happening
+                    console.log("Card logo status:", card.dataset.isLogo, typeof card.dataset.isLogo);
+                    
                     if (filter === 'all') {
                         card.style.display = 'block';
                     } else if (filter === 'logo') {
@@ -863,3 +876,5 @@
     </script>
 </body>
 </html>
+
+
