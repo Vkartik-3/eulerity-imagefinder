@@ -238,63 +238,64 @@ public class WebCrawler {
         }
     }
 
-    /**
-     * Add an image to the results with metadata
-     * 
-     * @param imageUrl The URL of the image
-     * @param imgElement The img element (may be null for CSS background images)
-     * @param pageUrl The URL of the page where the image was found
-     */
-    private void addImage(String imageUrl, Element imgElement, String pageUrl) {
-        // Only add if it's a new image
-        if (!imageUrls.contains(imageUrl)) {
-            imageUrls.add(imageUrl);
-            
-            // Create metadata
-            ImageMetadata metadata = new ImageMetadata(imageUrl);
-            metadata.setPageFound(pageUrl);
-            
-            // Extract additional metadata if available
-            if (imgElement != null) {
-                // Extract alt text
-                String altText = imgElement.attr("alt");
-                if (!altText.isEmpty()) {
-                    metadata.setAltText(altText);
-                }
-                
-                // Extract dimensions if available
-                String width = imgElement.attr("width");
-                String height = imgElement.attr("height");
-                if (!width.isEmpty()) {
-                    try {
-                        metadata.setWidth(Integer.parseInt(width));
-                    } catch (NumberFormatException e) {
-                        // Ignore invalid width
-                    }
-                }
-                if (!height.isEmpty()) {
-                    try {
-                        metadata.setHeight(Integer.parseInt(height));
-                    } catch (NumberFormatException e) {
-                        // Ignore invalid height
-                    }
-                }
-                
-                // Check if it's a logo
-                metadata.setLogo(LogoDetector.isLikelyLogo(imageUrl, 
-                        metadata.getWidth(), 
-                        metadata.getHeight(), 
-                        metadata.getAltText()));
-            } else {
-                // For non-img elements, check if it's a logo based on URL only
-                metadata.setLogo(LogoDetector.isLikelyLogo(imageUrl));
+/**
+ * Add an image to the results with metadata
+ * 
+ * @param imageUrl The URL of the image
+ * @param imgElement The img element (may be null for CSS background images)
+ * @param pageUrl The URL of the page where the image was found
+ */
+private void addImage(String imageUrl, Element imgElement, String pageUrl) {
+    // Only add if it's a new image
+    if (!imageUrls.contains(imageUrl)) {
+        imageUrls.add(imageUrl);
+        
+        // Create metadata
+        ImageMetadata metadata = new ImageMetadata(imageUrl);
+        metadata.setPageFound(pageUrl);
+        
+        // Extract additional metadata if available
+        if (imgElement != null) {
+            // Extract alt text
+            String altText = imgElement.attr("alt");
+            if (!altText.isEmpty()) {
+                metadata.setAltText(altText);
             }
             
-            // Store metadata
-            imageMetadata.put(imageUrl, metadata);
+            // Extract dimensions if available
+            String width = imgElement.attr("width");
+            String height = imgElement.attr("height");
+            if (!width.isEmpty()) {
+                try {
+                    metadata.setWidth(Integer.parseInt(width));
+                } catch (NumberFormatException e) {
+                    // Ignore invalid width
+                }
+            }
+            if (!height.isEmpty()) {
+                try {
+                    metadata.setHeight(Integer.parseInt(height));
+                } catch (NumberFormatException e) {
+                    // Ignore invalid height
+                }
+            }
+            
+            // Check if it's a logo using the enhanced detection
+            metadata.setLogo(LogoDetector.isLikelyLogo(
+                    imageUrl, 
+                    metadata.getWidth(), 
+                    metadata.getHeight(), 
+                    metadata.getAltText(),
+                    pageUrl));
+        } else {
+            // For non-img elements, check if it's a logo using URL and page context
+            metadata.setLogo(LogoDetector.isLikelyLogo(imageUrl, -1, -1, null, pageUrl));
         }
+        
+        // Store metadata
+        imageMetadata.put(imageUrl, metadata);
     }
-
+}
     /**
      * Extract image URL from CSS style attribute
      * 
