@@ -1,121 +1,3 @@
-<!-- <html>
-<head>
-</head>
-<body>
-	<h1>Eulerity Take-Home Challenge</h1>
-
-	<h2>How it works</h2>
-	<ul>
-		<li>Pressing the submit button on this page will make a POST
-			request to /main</li>
-		<li>That request will contain a form parameter with the url
-			populated in the input box below</li>
-		<li>The ImageFinder servlet will respond to the request with a
-			list of image urls</li>
-		<li>This page contains javascript to send the request and use the
-			response to build a list of images</li>
-	</ul>
-	<h2>Backend Developers</h2>
-	<ul>
-		<li>You can update the ImageFinder servlet to add crawling logic</li>
-		<li>Feel free to add as many classes/packages/files/third party
-			libraries as you'd like</li>
-		<li>We recommend JSoup for parsing web pages</li>
-		<li>You can update this page's html/css/style if you plan on
-			improving the interface</li>
-		<li>Your final submission does not need to contain any of the
-			files included herein</li>
-		<li>This project is just skeleton code so you can hit the ground
-			running.</li>
-		<li>Some ideas:
-			<ul>
-			<li>Crawl not only the given url, but other pages in the same domain</li>
-			<li>Make your crawler multithreaded to speed up response times</li>
-			<li>Be a friendly crawler and try not to hammer a site</li>
-			<li>Think about how to identify different classes of images and do they need special handling</li>
-			<li>Can you identify images as logos? Perhaps collect favicons?</li>
-			<li>Can you mark images that contain people?</li>
-			</ul>
-		</li>
-	</ul>
-	<h2>Important Notes</h2>
-	<p>Congratulations on making it this far into the interview
-		process!</p>
-	<p>
-	This is a free-form hackathon for a very important reason. We wish to see what ideas you can bring to the table.
-	</p>
-	<p><strong>If your submission only contains 5-10 lines of new code, please think twice about submitting it.</strong> If you need more time, you can ask for it.
-	</p>
-	<p>
-	You can use one of the ideas above, but feel free to go off and build something completely different. 
-	The important thing is to submit something that highlights your strengths as a developer.
-	</p>
-	<p>
-	  <b>Remember, this is your chance to show off how you can best contribute to our team.</b>
-	</p>
-	<p>Please remember to think about good design and code style. Comments in your code are great, but thought should also be taken in how to name your variables and method.</p>
-
-
-
-	<div class="content">
-		<div class="input">
-			<form>
-				<input type="text" name="url">
-			</form>
-			<button type="button">Submit!</button>
-		</div>
-		<div class="output">
-			<ul class="results">
-
-			</ul>
-		</div>
-	</div>
-	<script>
-		var resultList = document.querySelector('ul.results');
-		var urlInput = document.querySelector('input[name=url]')
-
-		apiCallBack = function(xhr, callback) {
-			if (xhr.readyState == XMLHttpRequest.DONE) {
-				if (xhr.status != 200) {
-					let message = xhr.status + ":" + xhr.statusText + ":"
-							+ xhr.responseText;
-					alert(message);
-					throw 'API call returned bad code: ' + xhr.status;
-				}
-				let response = xhr.responseText ? JSON.parse(xhr.responseText)
-						: null;
-				if (callback) {
-					callback(response);
-				}
-			}
-		}
-
-		updateList = function(response) {
-			resultList.innerHTML = '';
-			for (var i = 0; i < response.length; i++) {
-				var img = document.createElement("img");
-				img.width = 200;
-				img.src = response[i];
-				resultList.appendChild(img);
-			}
-		}
-
-		makeApiCall = function(url, method, obj, callback) {
-			let xhr = new XMLHttpRequest();
-			xhr.open(method, url);
-			xhr.onreadystatechange = apiCallBack.bind(null, xhr, callback);
-			xhr.send(obj ? obj instanceof FormData || obj.constructor == String ? obj : JSON.stringify(obj) : null);
-		}
-
-		document.querySelector('button').addEventListener("click", function(event) {
-			event.preventDefault();
-			makeApiCall('/main?url=' + urlInput.value, 'POST', null, updateList);
-		});
-	</script>
-</body>
-
-</html> -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -123,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eulerity Image Finder</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         :root {
             --primary-color: #4a86e8;
+            --primary-hover: #3a76d8;
             --secondary-color: #6aa84f;
+            --secondary-hover: #599b41;
             --accent-color: #f1c232;
             --dark-color: #333333;
             --light-color: #f9f9f9;
@@ -134,6 +19,7 @@
             --success-color: #6aa84f;
             --border-radius: 8px;
             --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --box-shadow-hover: 0 12px 16px rgba(0, 0, 0, 0.15);
             --transition: all 0.3s ease;
         }
 
@@ -156,6 +42,8 @@
             margin-bottom: 30px;
             padding: 20px;
             border-bottom: 1px solid #eee;
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            border-radius: var(--border-radius);
         }
 
         h1 {
@@ -180,7 +68,6 @@
             padding: 20px;
             margin-bottom: 20px;
         }
-
         .form-group {
             margin-bottom: 15px;
         }
@@ -191,7 +78,54 @@
             font-weight: 500;
         }
 
-        input[type="text"],
+        .input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-container input {
+            width: 100%;
+            padding: 10px 40px 10px 10px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-container input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 134, 232, 0.2);
+        }
+
+        .clear-button {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #999;
+            display: none;
+            z-index: 2;
+            padding: 5px;
+            border-radius: 50%;
+        }
+
+        .clear-button:hover {
+            color: #333;
+            background-color: #f0f0f0;
+        }
+
+        .valid-url {
+            border-color: var(--success-color) !important;
+        }
+
+        .invalid-url {
+            border-color: var(--error-color) !important;
+        }
+
         input[type="number"],
         select {
             width: 100%;
@@ -232,10 +166,14 @@
             font-size: 16px;
             font-weight: 500;
             transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         button:hover {
-            background-color: #3a76d8;
+            background-color: var(--primary-hover);
         }
 
         button:disabled {
@@ -246,7 +184,6 @@
         #status-card {
             display: none;
         }
-
         .progress-container {
             background-color: #eee;
             border-radius: 5px;
@@ -285,6 +222,14 @@
 
         .results-container {
             margin-top: 30px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .results-container.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .filter-controls {
@@ -310,6 +255,33 @@
             border-color: var(--primary-color);
         }
 
+        .search-filter {
+            margin-left: auto;
+            position: relative;
+        }
+
+        .search-filter input {
+            padding: 8px 15px;
+            padding-left: 35px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            width: 200px;
+            transition: var(--transition);
+        }
+
+        .search-filter input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            width: 250px;
+        }
+
+        .search-filter i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
         .results-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -323,12 +295,14 @@
             box-shadow: var(--box-shadow);
             transition: var(--transition);
             position: relative;
-            height: 250px;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
         }
 
         .image-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--box-shadow-hover);
         }
 
         .image-container {
@@ -338,20 +312,27 @@
             align-items: center;
             justify-content: center;
             background-color: #f5f5f5;
+            position: relative;
         }
 
         .image-container img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+
+        .image-card:hover .image-container img {
+            transform: scale(1.05);
         }
 
         .image-info {
-            padding: 10px;
+            padding: 15px;
             position: relative;
             display: flex;
             flex-direction: column;
             gap: 5px;
+            flex: 1;
         }
 
         .image-url {
@@ -386,10 +367,16 @@
             font-size: 12px;
             font-weight: 500;
         }
+
+        .image-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: auto;
+            padding-top: 10px;
+        }
         
         .download-btn {
-            margin-top: 5px;
-            padding: 4px 8px;
+            padding: 6px 12px;
             background-color: var(--secondary-color);
             color: white;
             text-align: center;
@@ -397,10 +384,30 @@
             border-radius: var(--border-radius);
             font-size: 12px;
             transition: var(--transition);
+            border: none;
+            cursor: pointer;
         }
         
         .download-btn:hover {
-            background-color: #599b41;
+            background-color: var(--secondary-hover);
+        }
+        
+        .view-btn {
+            padding: 6px 12px;
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            text-align: center;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            font-size: 12px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .view-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
         }
 
         .error-message {
@@ -420,6 +427,49 @@
             border-radius: var(--border-radius);
             display: none;
         }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            max-width: 350px;
+            background-color: white;
+            color: #333;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-info {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .toast-success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .toast-error {
+            border-left: 4px solid var(--error-color);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
 
         .info-section {
             margin-top: 40px;
@@ -438,6 +488,64 @@
             margin-bottom: 5px;
         }
 
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            position: relative;
+            overflow: auto;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: #777;
+            cursor: pointer;
+            background: none;
+            border: none;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            color: var(--error-color);
+        }
+
+        .modal-image {
+            display: block;
+            max-width: 100%;
+            max-height: 70vh;
+            margin: 0 auto;
+        }
+
+        .modal-details {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .modal-details p {
+            margin-bottom: 8px;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .results-grid {
@@ -451,6 +559,20 @@
             
             .form-row .form-group {
                 min-width: 100%;
+            }
+            
+            .search-filter {
+                margin-left: 0;
+                margin-top: 10px;
+                width: 100%;
+            }
+            
+            .search-filter input {
+                width: 100%;
+            }
+            
+            .search-filter input:focus {
+                width: 100%;
             }
         }
     </style>
@@ -466,9 +588,11 @@
             <form id="crawl-form">
                 <div class="form-group">
                     <label for="url">Website URL</label>
-                    <input type="text" id="url" name="url" placeholder="https://example.com" required>
+                    <div class="input-container">
+                        <input type="text" id="url" name="url" placeholder="https://example.com" required>
+                        <button type="button" class="clear-button" id="clear-url">×</button>
+                    </div>
                 </div>
-                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="maxPages">Max Pages to Crawl</label>
@@ -482,7 +606,7 @@
                     
                     <div class="form-group">
                         <label for="crawlDelay">Crawl Delay (ms)</label>
-                        <input type="number" id="crawlDelay" name="crawlDelay" value="200" min="0" max="2000">
+                        <input type="number" id="crawlDelay" name="crawlDelay" value="500" min="0" max="2000">
                     </div>
                 </div>
                 
@@ -491,7 +615,7 @@
                     <label for="detectLogos">Detect Logo Images</label>
                 </div>
                 
-                <button type="submit" id="submit-btn">Start Crawling</button>
+                <button type="submit" id="submit-btn"><i class="fas fa-spider"></i> Start Crawling</button>
             </form>
             
             <div class="error-message" id="error-message"></div>
@@ -505,7 +629,7 @@
                 <div class="progress-bar" id="progress-bar"></div>
             </div>
             <p class="status-text" id="status-text">Initializing crawler...</p>
-            <button id="stop-btn">Stop Crawling</button>
+            <button id="stop-btn"><i class="fas fa-stop-circle"></i> Stop Crawling</button>
         </div>
         
         <div class="results-container" id="results-container" style="display: none;">
@@ -516,6 +640,11 @@
                 <button class="filter-btn active" data-filter="all">All Images</button>
                 <button class="filter-btn" data-filter="logo">Logos Only</button>
                 <span id="image-count"></span>
+                
+                <div class="search-filter">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Search images...">
+                </div>
             </div>
             
             <div class="results-grid" id="results-grid"></div>
@@ -536,7 +665,20 @@
             <p>For best results, try using URLs of content-rich websites. The crawler respects robots.txt and implements a crawl delay to avoid overloading servers.</p>
         </div>
     </div>
-
+    
+    <!-- Image Modal -->
+    <div class="modal" id="image-modal">
+        <div class="modal-content">
+            <button class="modal-close" id="modal-close">&times;</button>
+            <img class="modal-image" id="modal-image" src="" alt="Full size image">
+            <div class="modal-details" id="modal-details">
+                <p><strong>URL:</strong> <span id="modal-url"></span></p>
+                <p><strong>Dimensions:</strong> <span id="modal-dimensions">Unknown</span></p>
+                <p><strong>Found on page:</strong> <span id="modal-page">Unknown</span></p>
+                <p><strong>Is Logo:</strong> <span id="modal-logo">No</span></p>
+            </div>
+        </div>
+    </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // DOM elements
@@ -544,6 +686,7 @@
             const submitBtn = document.getElementById('submit-btn');
             const stopBtn = document.getElementById('stop-btn');
             const urlInput = document.getElementById('url');
+            const clearUrlBtn = document.getElementById('clear-url');
             const errorMessage = document.getElementById('error-message');
             const successMessage = document.getElementById('success-message');
             const statusCard = document.getElementById('status-card');
@@ -553,15 +696,49 @@
             const resultsGrid = document.getElementById('results-grid');
             const imageCount = document.getElementById('image-count');
             const filterBtns = document.querySelectorAll('.filter-btn');
+            const searchInput = document.getElementById('search-input');
+            const modal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+            const modalClose = document.getElementById('modal-close');
+            const modalUrl = document.getElementById('modal-url');
+            const modalDimensions = document.getElementById('modal-dimensions');
+            const modalPage = document.getElementById('modal-page');
+            const modalLogo = document.getElementById('modal-logo');
             
             // Variables
             let crawlInProgress = false;
             let statusCheckInterval;
             let imageResults = [];
             
+            // Set up URL input with clear button
+            urlInput.addEventListener('input', function() {
+                clearUrlBtn.style.display = this.value ? 'block' : 'none';
+                validateUrl();
+            });
+            
+            clearUrlBtn.addEventListener('click', function() {
+                urlInput.value = '';
+                urlInput.focus();
+                clearUrlBtn.style.display = 'none';
+                validateUrl();
+            });
+            
+            // Initial URL input state
+            clearUrlBtn.style.display = urlInput.value ? 'block' : 'none';
+            validateUrl();
+            
             // Event listeners
             form.addEventListener('submit', startCrawling);
             stopBtn.addEventListener('click', stopCrawling);
+            searchInput.addEventListener('input', filterBySearch);
+            modalClose.addEventListener('click', () => modal.style.display = 'none');
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
             
             // Set up filter buttons
             filterBtns.forEach(btn => {
@@ -570,11 +747,35 @@
                     filterBtns.forEach(b => b.classList.remove('active'));
                     // Add active class to clicked button
                     this.classList.add('active');
-                    // Apply filter
-                    filterImages(this.getAttribute('data-filter'));
+                    // Apply filters
+                    applyFilters();
                 });
             });
             
+            /**
+             * Validate URL format
+             */
+            function validateUrl() {
+                const url = urlInput.value.trim();
+                if (!url) {
+                    urlInput.classList.remove('valid-url', 'invalid-url');
+                    return;
+                }
+                
+                try {
+                    // Add protocol if missing
+                    let testUrl = url;
+                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        testUrl = 'https://' + url;
+                    }
+                    new URL(testUrl);
+                    urlInput.classList.add('valid-url');
+                    urlInput.classList.remove('invalid-url');
+                } catch (e) {
+                    urlInput.classList.add('invalid-url');
+                    urlInput.classList.remove('valid-url');
+                }
+            }
             /**
              * Start the crawling process
              */
@@ -584,6 +785,7 @@
                 if (crawlInProgress) {
                     return;
                 }
+                
                 
                 // Get form data
                 const url = urlInput.value.trim();
@@ -613,6 +815,9 @@
                 toggleFormFields(true);
                 crawlInProgress = true;
                 
+                // Show toast notification
+                showToast('Crawling started', 'info');
+                
                 // Make API request
                 const apiUrl = `/main?url=${encodeURIComponent(url)}&maxPages=${maxPages}&threadCount=${threadCount}&crawlDelay=${crawlDelay}&detectLogos=${detectLogos}`;
                 
@@ -632,10 +837,12 @@
                     // Process results
                     processResults(data);
                     showSuccess(`Found ${data.length} images on ${url}`);
+                    showToast(`Found ${data.length} images!`, 'success');
                 })
                 .catch(error => {
                     console.error('Crawling error:', error);
                     showError(error.message || 'An unexpected error occurred during crawling');
+                    showToast('Error: ' + (error.message || 'Crawling failed'), 'error');
                 })
                 .finally(() => {
                     // Re-enable form fields
@@ -648,11 +855,10 @@
                 // Start status check
                 startStatusCheck(url);
             }
-            
             /**
              * Start checking the status of the crawl
              */
-            function startStatusCheck(url) {
+             function startStatusCheck(url) {
                 const statusUrl = `/main?url=${encodeURIComponent(url)}&action=status`;
                 let pagesCrawled = 0;
                 
@@ -665,7 +871,8 @@
                         if (data.status === 'running') {
                             // Update progress
                             pagesCrawled = data.pagesCrawled;
-                            const progress = Math.min((pagesCrawled / parseInt(document.getElementById('maxPages').value)) * 100, 100);
+                            const maxPages = parseInt(document.getElementById('maxPages').value);
+                            const progress = Math.min((pagesCrawled / maxPages) * 100, 100);
                             progressBar.style.width = `${progress}%`;
                             statusText.textContent = `Crawling in progress... (${pagesCrawled} pages crawled)`;
                         } else if (data.status === 'completed') {
@@ -683,11 +890,26 @@
              * Stop the crawling process
              */
             function stopCrawling() {
-                clearInterval(statusCheckInterval);
-                statusCard.style.display = 'none';
-                toggleFormFields(false);
-                crawlInProgress = false;
-                showError('Crawling stopped by user');
+                const url = urlInput.value.trim();
+                const stopUrl = `/main?url=${encodeURIComponent(url)}&action=stop`;
+                
+                fetch(stopUrl, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Stop response:', data);
+                })
+                .catch(error => {
+                    console.error('Error stopping crawler:', error);
+                })
+                .finally(() => {
+                    clearInterval(statusCheckInterval);
+                    statusCard.style.display = 'none';
+                    toggleFormFields(false);
+                    crawlInProgress = false;
+                    showToast('Crawling stopped by user', 'info');
+                });
             }
             
             /**
@@ -699,9 +921,6 @@
                 // Clear previous results
                 resultsGrid.innerHTML = '';
                 
-                // Debug log to check data structure
-                console.log("First few results:", data.slice(0, 3));
-                
                 // Update image count
                 imageCount.textContent = `(${data.length} images found)`;
                 
@@ -710,9 +929,15 @@
                     const imageCard = document.createElement('div');
                     imageCard.className = 'image-card';
                     
-                    // FIXED: Check for both isLogo and logo properties
-                    // Convert to string 'true' or 'false' for dataset
+                    // Set data attributes for filtering
                     imageCard.dataset.isLogo = (image.isLogo === true || image.logo === true) ? 'true' : 'false';
+                    imageCard.dataset.url = image.url.toLowerCase();
+                    if (image.altText) {
+                        imageCard.dataset.altText = image.altText.toLowerCase();
+                    }
+                    if (image.pageFound) {
+                        imageCard.dataset.pageFound = image.pageFound.toLowerCase();
+                    }
                     
                     // Create image container
                     const imageContainer = document.createElement('div');
@@ -722,9 +947,15 @@
                     const img = document.createElement('img');
                     img.src = image.url;
                     img.alt = image.altText || `Image ${index + 1}`;
+                    img.loading = 'lazy';
                     img.onerror = function() {
                         this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20fill%3D%22%23f5f5f5%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.35em%22%20text-anchor%3D%22middle%22%20x%3D%2250%22%20y%3D%2250%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E';
                     };
+                    
+                    // Add click event to show image in modal
+                    imageContainer.addEventListener('click', function() {
+                        openImageModal(image);
+                    });
                     
                     imageContainer.appendChild(img);
                     imageCard.appendChild(imageContainer);
@@ -764,7 +995,7 @@
                         imageInfo.appendChild(pageFound);
                     }
                     
-                    // FIXED: Check for both isLogo and logo properties
+                    // Check for logo
                     if (image.isLogo === true || image.logo === true) {
                         const logoBadge = document.createElement('div');
                         logoBadge.className = 'logo-badge';
@@ -772,54 +1003,124 @@
                         imageCard.appendChild(logoBadge);
                     }
                     
-                    // Add download button
+                    // Add action buttons
+                    const imageActions = document.createElement('div');
+                    imageActions.className = 'image-actions';
+                    
+                    // Download button
                     const downloadBtn = document.createElement('a');
                     downloadBtn.className = 'download-btn';
                     downloadBtn.href = image.url;
                     downloadBtn.target = '_blank';
                     downloadBtn.download = '';
-                    downloadBtn.textContent = 'Download';
+                    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
                     downloadBtn.addEventListener('click', function(e) {
+                        e.stopPropagation(); // Prevent opening the modal
                         // For some browsers that don't support download attribute
-                        // this prevents the browser from navigating to the image
                         if (!this.download) {
                             e.preventDefault();
                             window.open(this.href);
                         }
                     });
-                    imageInfo.appendChild(downloadBtn);
+                    
+                    // View button
+                    const viewBtn = document.createElement('button');
+                    viewBtn.className = 'view-btn';
+                    viewBtn.innerHTML = '<i class="fas fa-eye"></i> View';
+                    viewBtn.addEventListener('click', function(e) {
+                        e.stopPropagation(); // Prevent triggering parent's click
+                        openImageModal(image);
+                    });
+                    
+                    imageActions.appendChild(downloadBtn);
+                    imageActions.appendChild(viewBtn);
+                    imageInfo.appendChild(imageActions);
                     
                     imageCard.appendChild(imageInfo);
                     resultsGrid.appendChild(imageCard);
                 });
                 
-                // Show results
+                // Show results with animation
                 resultsContainer.style.display = 'block';
+                setTimeout(() => {
+                    resultsContainer.classList.add('visible');
+                }, 10);
                 
                 // Apply default filter (all)
-                filterImages('all');
+                applyFilters();
             }
-            
             /**
-             * Filter images by type
+             * Open image modal with details
              */
-            function filterImages(filter) {
+             function openImageModal(image) {
+                // Handle image load error first, before setting src
+                modalImage.onerror = function() {
+                    this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20fill%3D%22%23f5f5f5%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.35em%22%20text-anchor%3D%22middle%22%20x%3D%2250%22%20y%3D%2250%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E';
+                };
+                
+                // Now set the src
+                modalImage.src = image.url;
+                modalUrl.textContent = image.url;
+                
+                // Set dimensions
+                if (image.width > 0 && image.height > 0) {
+                    modalDimensions.textContent = `${image.width} × ${image.height}`;
+                } else {
+                    modalDimensions.textContent = 'Unknown';
+                }
+                
+                // Set page found
+                if (image.pageFound) {
+                    modalPage.textContent = image.pageFound;
+                } else {
+                    modalPage.textContent = 'Unknown';
+                }
+                
+                // Set logo status
+                modalLogo.textContent = (image.isLogo === true || image.logo === true) ? 'Yes' : 'No';
+                
+                // Show modal
+                modal.style.display = 'flex';
+            }
+            /**
+             * Apply both logo filter and search filter
+             */
+             function applyFilters() {
+                const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+                const searchQuery = searchInput.value.toLowerCase();
                 const imageCards = document.querySelectorAll('.image-card');
                 
+                let visibleCount = 0;
+                
                 imageCards.forEach(card => {
-                    // Debug the dataset value to see what's happening
-                    console.log("Card logo status:", card.dataset.isLogo, typeof card.dataset.isLogo);
+                    // Check logo filter
+                    const matchesLogoFilter = activeFilter === 'all' || 
+                                             (activeFilter === 'logo' && card.dataset.isLogo === 'true');
                     
-                    if (filter === 'all') {
+                    // Check search filter with enhanced searching
+                    const matchesSearch = !searchQuery || 
+                                         card.dataset.url.includes(searchQuery) || 
+                                         (card.dataset.altText && card.dataset.altText.includes(searchQuery)) || 
+                                         (card.dataset.pageFound && card.dataset.pageFound.includes(searchQuery));
+                    
+                    // Show or hide based on both filters
+                    if (matchesLogoFilter && matchesSearch) {
                         card.style.display = 'block';
-                    } else if (filter === 'logo') {
-                        card.style.display = card.dataset.isLogo === 'true' ? 'block' : 'none';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
                     }
                 });
                 
                 // Update count
-                const visibleCount = Array.from(imageCards).filter(card => card.style.display !== 'none').length;
                 imageCount.textContent = `(${visibleCount} of ${imageResults.length} images)`;
+            }
+            
+            /**
+             * Filter images by search query
+             */
+            function filterBySearch() {
+                applyFilters();
             }
             
             /**
@@ -831,6 +1132,7 @@
                     formElements[i].disabled = disabled;
                 }
                 submitBtn.disabled = disabled;
+                clearUrlBtn.style.display = disabled ? 'none' : (urlInput.value ? 'block' : 'none');
             }
             
             /**
@@ -850,11 +1152,10 @@
                 successMessage.style.display = 'block';
                 errorMessage.style.display = 'none';
             }
-            
             /**
              * Hide all messages
              */
-            function hideMessages() {
+             function hideMessages() {
                 errorMessage.style.display = 'none';
                 successMessage.style.display = 'none';
             }
@@ -874,8 +1175,46 @@
                     return false;
                 }
             }
+            
+            /**
+             * Show toast notification
+             */
+            function showToast(message, type = 'info') {
+                // Remove existing toasts
+                const existingToast = document.querySelector('.toast');
+                if (existingToast) {
+                    existingToast.remove();
+                }
+                
+                // Create toast element
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.textContent = message;
+                
+                // Add close button
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'toast-close';
+                closeBtn.innerHTML = '&times;';
+                closeBtn.addEventListener('click', () => toast.remove());
+                toast.appendChild(closeBtn);
+                
+                // Add to document
+                document.body.appendChild(toast);
+                
+                // Animate in
+                setTimeout(() => {
+                    toast.classList.add('show');
+                }, 10);
+                
+                // Auto remove
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 300);
+                }, 5000);
+            }
         });
     </script>
 </body>
 </html>
-
