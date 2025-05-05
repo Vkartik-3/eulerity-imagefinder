@@ -27,7 +27,7 @@ public class ImageFinder extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final int DEFAULT_MAX_PAGES = 100;
     private static final int DEFAULT_THREAD_COUNT = 8;
-    private static final int DEFAULT_CRAWL_DELAY_MS = 200;
+    private static final int DEFAULT_CRAWL_DELAY_MS = 500;
 
     private static final Map<String, WebCrawler> activeCrawlers = new ConcurrentHashMap<>();
     private static final Map<String, List<ImageResult>> resultsCache = new ConcurrentHashMap<>();
@@ -76,11 +76,11 @@ public class ImageFinder extends HttpServlet {
                 resp.getWriter().print(GSON.toJson(resultsCache.get(url)));
                 return;
             }
-
+        
             // Create and start crawler
             WebCrawler crawler = new WebCrawler(url, maxPages, threadCount, crawlDelay);
             activeCrawlers.put(url, crawler);
-
+        
             // Crawl and process images
             List<String> imageUrls = crawler.crawl();
             Map<String, ImageMetadata> metadataMap = crawler.getImageMetadata();
@@ -101,13 +101,31 @@ public class ImageFinder extends HttpServlet {
                 
                 results.add(result);
             }
-
+        
             // Cache and return results
             resultsCache.put(url, results);
             resp.getWriter().print(GSON.toJson(results));
-
+        
         } catch (Exception e) {
-            sendErrorResponse(resp, "Crawling error: " + e.getMessage());
+            // More detailed error handling
+            String errorMessage = e.getMessage();
+            if (errorMessage == null || errorMessage.isEmpty()) {
+                errorMessage = "Unknown error occurred during crawling";
+            }
+            
+            // Include stack trace in server logs for debugging
+            e.printStackTrace();
+            
+            // Create user-friendly error message
+            String userMessage = "Crawling error: " + errorMessage;
+            
+            // Return more details in the error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", userMessage);
+            errorResponse.put("status", "failed");
+            errorResponse.put("errorType", e.getClass().getSimpleName());
+            
+            sendErrorResponse(resp, userMessage);
         } finally {
             // Cleanup crawler
             WebCrawler crawler = activeCrawlers.get(url);
