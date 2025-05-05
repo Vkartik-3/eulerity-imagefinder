@@ -1,1383 +1,1518 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Eulerity Image Finder</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
     <style>
-        :root {
-            --primary-color: #4a86e8;
-            --primary-hover: #3a76d8;
-            --secondary-color: #6aa84f;
-            --secondary-hover: #599b41;
-            --accent-color: #f1c232;
-            --dark-color: #333333;
-            --light-color: #f9f9f9;
-            --error-color: #cc0000;
-            --success-color: #6aa84f;
-            --border-radius: 8px;
-            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --box-shadow-hover: 0 12px 16px rgba(0, 0, 0, 0.15);
-            --transition: all 0.3s ease;
-            --dark-mode-background: #1e1e2e;
-            --dark-mode-card-bg: #282c34;
-            --dark-mode-text: #f0f0f0;
-            --dark-mode-secondary: #61dafb;
-        }
+      :root {
+        --primary-color: #4a86e8;
+        --primary-hover: #3a76d8;
+        --secondary-color: #6aa84f;
+        --secondary-hover: #599b41;
+        --accent-color: #f1c232;
+        --dark-color: #333333;
+        --light-color: #f9f9f9;
+        --error-color: #cc0000;
+        --success-color: #6aa84f;
+        --border-radius: 8px;
+        --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --box-shadow-hover: 0 12px 16px rgba(0, 0, 0, 0.15);
+        --transition: all 0.3s ease;
+        --dark-mode-background: #1e1e2e;
+        --dark-mode-card-bg: #282c34;
+        --dark-mode-text: #f0f0f0;
+        --dark-mode-secondary: #61dafb;
+      }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: 'Roboto', sans-serif;
-            line-height: 1.6;
-            color: var(--dark-color);
-            background-color: var(--light-color);
-            padding: 20px;
-        }
+      body {
+        font-family: "Roboto", sans-serif;
+        line-height: 1.6;
+        color: var(--dark-color);
+        background-color: var(--light-color);
+        padding: 20px;
+      }
 
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            border-bottom: 1px solid #eee;
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            border-radius: var(--border-radius);
-        }
+      header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        background: linear-gradient(to right, #f8f9fa, #e9ecef);
+        border-radius: var(--border-radius);
+      }
 
-        h1 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
+      h1 {
+        color: var(--primary-color);
+        margin-bottom: 10px;
+      }
 
-        h2 {
-            color: var(--secondary-color);
-            margin: 20px 0 10px;
-        }
+      h2 {
+        color: var(--secondary-color);
+        margin: 20px 0 10px;
+      }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-        .card {
-            background-color: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
+      .card {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
 
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
 
-        .input-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
+      .input-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
 
-        .input-container input {
-            width: 100%;
-            padding: 10px 40px 10px 10px;
-            border: 1px solid #ddd;
-            border-radius: var(--border-radius);
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
+      .input-container input {
+        width: 100%;
+        padding: 10px 40px 10px 10px;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+      }
 
-        .input-container input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(74, 134, 232, 0.2);
-        }
-        body.dark-mode {
-            background-color: var(--dark-mode-background);
-            color: var(--dark-mode-text);
-        }
-        
-        body.dark-mode .card {
-            background-color: var(--dark-mode-card-bg);
-            color: var(--dark-mode-text);
-        }
-        
-        body.dark-mode .image-card {
-            background-color: var(--dark-mode-card-bg);
-            border: 1px solid #3a3a4a;
-        }
-        
-        body.dark-mode .image-container {
-            background-color: #1a1a2e;
-        }
-        
-        body.dark-mode .image-url,
-        body.dark-mode .image-dimensions,
-        body.dark-mode .image-page-found {
-            color: var(--dark-mode-text);
-            opacity: 0.8;
-        }
-        
-        body.dark-mode .filter-btn {
-            background-color: var(--dark-mode-card-bg);
-            border-color: #3a3a4a;
-            color: var(--dark-mode-text);
-        }
-        
-        /* Theme Toggle Button */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background: var(--primary-color);
-            color: white;
-            box-shadow: var(--box-shadow);
-        }
-        
-        /* Back to Top Button */
-        .back-to-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: var(--box-shadow);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            z-index: 99;
-        }
-        
-        .back-to-top.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .back-to-top:hover {
-            transform: translateY(-5px);
-            background-color: var(--primary-hover);
-        }
-        .clear-button {
-            position: absolute;
-            right: 10px;
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: #999;
-            display: none;
-            z-index: 2;
-            padding: 5px;
-            border-radius: 50%;
-        }
+      .input-container input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(74, 134, 232, 0.2);
+      }
+      body.dark-mode {
+        background-color: var(--dark-mode-background);
+        color: var(--dark-mode-text);
+      }
 
-        .clear-button:hover {
-            color: #333;
-            background-color: #f0f0f0;
-        }
+      body.dark-mode .card {
+        background-color: var(--dark-mode-card-bg);
+        color: var(--dark-mode-text);
+      }
 
-        .valid-url {
-            border-color: var(--success-color) !important;
-        }
+      body.dark-mode .image-card {
+        background-color: var(--dark-mode-card-bg);
+        border: 1px solid #3a3a4a;
+      }
 
-        .invalid-url {
-            border-color: var(--error-color) !important;
-        }
+      body.dark-mode .image-container {
+        background-color: #1a1a2e;
+      }
 
-        input[type="number"],
-        select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: var(--border-radius);
-            font-size: 16px;
+      body.dark-mode .image-url,
+      body.dark-mode .image-dimensions,
+      body.dark-mode .image-page-found {
+        color: var(--dark-mode-text);
+        opacity: 0.8;
+      }
+
+      body.dark-mode .filter-btn {
+        background-color: var(--dark-mode-card-bg);
+        border-color: #3a3a4a;
+        color: var(--dark-mode-text);
+      }
+
+      /* Theme Toggle Button */
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        background: var(--primary-color);
+        color: white;
+        box-shadow: var(--box-shadow);
+      }
+
+      /* Back to Top Button */
+      .back-to-top {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Stronger shadow */
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 1000; /* Higher z-index to ensure it's above everything */
+        font-size: 18px; /* Larger icon */
+        border: none;
+      }
+
+      .back-to-top.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .back-to-top:hover {
+        transform: translateY(-5px);
+        background-color: var(--primary-hover);
+      }
+      .clear-button {
+        position: absolute;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #999;
+        display: none;
+        z-index: 2;
+        padding: 5px;
+        border-radius: 50%;
+      }
+
+      .clear-button:hover {
+        color: #333;
+        background-color: #f0f0f0;
+      }
+
+      .valid-url {
+        border-color: var(--success-color) !important;
+      }
+
+      .invalid-url {
+        border-color: var(--error-color) !important;
+      }
+
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: var(--border-radius);
+        font-size: 16px;
+      }
+
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+
+      .form-row .form-group {
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+      }
+
+      .checkbox-group input {
+        margin-right: 10px;
+      }
+
+      button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      button:hover {
+        background-color: var(--primary-hover);
+      }
+
+      button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+
+      #status-card {
+        display: none;
+      }
+      .progress-container {
+        background-color: #eee;
+        border-radius: 5px;
+        height: 10px;
+        margin: 15px 0;
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        background-color: var(--primary-color);
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+      body.dark-mode .status-text {
+        color: var(--dark-mode-text); /* Make text light in dark mode */
+        font-weight: 500; /* Add some weight to improve visibility */
+    }
+    body.dark-mode .progress-container {
+        background-color: #3a3a4a; /* Darker background in dark mode */
+    }
+    body.dark-mode .progress-bar {
+        background-color: var(--dark-mode-secondary); /* Use accent color for progress */
+    }
+      .status-text {
+        text-align: center;
+        font-size: 14px;
+        color: var(--dark-color);
+      }
+
+      .loader {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid var(--primary-color);
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 2s linear infinite;
+        margin: 10px auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .results-container {
+        margin-top: 30px;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+      }
+
+      .results-container.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .filter-controls {
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .filter-btn {
+        background-color: white;
+        border: 1px solid #ddd;
+        padding: 8px 15px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .filter-btn.active {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+      }
+
+      .search-filter {
+        margin-left: auto;
+        position: relative;
+      }
+
+      .search-filter input {
+        padding: 8px 15px;
+        padding-left: 35px;
+        border-radius: 20px;
+        border: 1px solid #ddd;
+        width: 200px;
+        transition: var(--transition);
+      }
+
+      .search-filter input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        width: 250px;
+      }
+
+      .search-filter i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #777;
+      }
+      .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+      }
+
+      .image-card {
+        position: relative;
+        height: auto;
+        min-height: 360px;
+        overflow: hidden;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        transition: all 0.3s ease;
+        background-color: white;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .image-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--box-shadow-hover);
+        border-color: var(--primary-color);
+      }
+
+      .image-container {
+        height: 200px;
+        position: relative;
+        overflow: hidden;
+        background-color: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .image-container::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.05) 0%,
+          rgba(0, 0, 0, 0) 50%
+        );
+        pointer-events: none;
+      }
+
+      .image-container img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        transition: transform 0.3s ease, filter 0.3s ease;
+      }
+
+      .image-card:hover .image-container img {
+        transform: scale(1.05);
+      }
+
+      .image-info {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        flex: 1;
+        min-height: 140px; 
+      }
+
+      .image-url {
+        font-size: 12px;
+        color: #777;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .image-dimensions {
+        font-size: 12px;
+        color: #666;
+      }
+
+      .image-page-found {
+        font-size: 11px;
+        color: #777;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .logo-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: var(--accent-color);
+        color: var(--dark-color);
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .image-actions {
+        display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  gap: 12px;
+  min-height: 50px;
+  align-items: center;
+  padding-top: 10px;
+  flex-wrap: wrap;
+    
+    }
+    
+      /* Make buttons more visible */
+.download-btn, .view-btn {
+    min-width: 40%;
+    flex-shrink: 0;
+    text-align: center;
+    white-space: nowrap;
+    flex: 1;
+    text-align: center;
+}
+
+/* Ensure text is visible on buttons */
+.download-btn, .view-btn {
+    color: white;
+    padding: 8px;
+}
+
+      .download-btn {
+        background-color: var(--secondary-color);
+        color: white;
+        border: none;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .download-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+      }
+      .download-btn:hover::before {
+        left: 100%;
+      }
+      .download-btn:hover {
+        background-color: var(--secondary-hover);
+      }
+
+      .view-btn {
+        color: var(--primary-color);
+    background-color: white;
+      }
+
+      .view-btn:hover {
+        background-color: var(--primary-color);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+      body.dark-mode .view-btn {
+        color: white;
+        background-color: var(--dark-mode-secondary);
+        border-color: var(--dark-mode-secondary);
+    }
+      .error-message {
+        color: var(--error-color);
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #ffebee;
+        border-radius: var(--border-radius);
+        display: none;
+      }
+
+      .success-message {
+        color: var(--success-color);
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #e8f5e9;
+        border-radius: var(--border-radius);
+        display: none;
+      }
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        max-width: 350px;
+        background-color: white;
+        color: #333;
+        padding: 12px 20px;
+        border-radius: 4px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+      }
+
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .toast-info {
+        border-left: 4px solid var(--primary-color);
+      }
+
+      .toast-success {
+        border-left: 4px solid var(--success-color);
+      }
+
+      .toast-error {
+        border-left: 4px solid var(--error-color);
+      }
+
+      .toast-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        margin-left: 10px;
+      }
+
+      .info-section {
+        margin-top: 40px;
+      }
+
+      .info-section p {
+        margin-bottom: 15px;
+      }
+
+      .info-section ul {
+        margin-left: 20px;
+        margin-bottom: 15px;
+      }
+
+      .info-section li {
+        margin-bottom: 5px;
+      }
+
+      /* Modal Styles */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modal-content {
+        background-color: white;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        border-radius: var(--border-radius);
+        padding: 20px;
+        position: relative;
+        overflow: auto;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 24px;
+        color: #777;
+        cursor: pointer;
+        background: none;
+        border: none;
+        transition: var(--transition);
+      }
+
+      .modal-close:hover {
+        color: var(--error-color);
+      }
+
+      .modal-image {
+        display: block;
+        max-width: 100%;
+        max-height: 70vh;
+        margin: 0 auto;
+      }
+
+      .modal-details {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+      }
+
+      .modal-details p {
+        margin-bottom: 8px;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .results-grid {
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         }
 
         .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
+          flex-direction: column;
+          gap: 10px;
         }
 
         .form-row .form-group {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin-top: 10px;
-        }
-
-        .checkbox-group input {
-            margin-right: 10px;
-        }
-
-        button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        button:hover {
-            background-color: var(--primary-hover);
-        }
-
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-
-        #status-card {
-            display: none;
-        }
-        .progress-container {
-            background-color: #eee;
-            border-radius: 5px;
-            height: 10px;
-            margin: 15px 0;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            background-color: var(--primary-color);
-            height: 100%;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        .status-text {
-            text-align: center;
-            font-size: 14px;
-            color: var(--dark-color);
-        }
-
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 2s linear infinite;
-            margin: 10px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .results-container {
-            margin-top: 30px;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
-        }
-
-        .results-container.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .filter-controls {
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .filter-btn {
-            background-color: white;
-            border: 1px solid #ddd;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .filter-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
+          min-width: 100%;
         }
 
         .search-filter {
-            margin-left: auto;
-            position: relative;
+          margin-left: 0;
+          margin-top: 10px;
+          width: 100%;
         }
 
         .search-filter input {
-            padding: 8px 15px;
-            padding-left: 35px;
-            border-radius: 20px;
-            border: 1px solid #ddd;
-            width: 200px;
-            transition: var(--transition);
+          width: 100%;
         }
 
         .search-filter input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            width: 250px;
+          width: 100%;
         }
-
-        .search-filter i {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #777;
-        }
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .image-card {
-            position: relative;
-            height: 300px;
-            overflow: hidden;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            transition: all 0.3s ease;
-            background-color: white;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .image-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--box-shadow-hover);
-            border-color: var(--primary-color);
-        }
-        
-
-        .image-container {
-            height: 200px;
-            position: relative;
-            overflow: hidden;
-            background-color: #f5f5f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .image-container::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(0deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 50%);
-            pointer-events: none;
-        }
-
-        .image-container img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            transition: transform 0.3s ease, filter 0.3s ease;
-        }
-
-        .image-card:hover .image-container img {
-            transform: scale(1.05);
-        }
-
-        .image-info {
-            padding: 15px;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            flex: 1;
-        }
-
-        .image-url {
-            font-size: 12px;
-            color: #777;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .image-dimensions {
-            font-size: 12px;
-            color: #666;
-        }
-        
-        .image-page-found {
-            font-size: 11px;
-            color: #777;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .logo-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: var(--accent-color);
-            color: var(--dark-color);
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .image-actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: auto;
-            padding-top: 10px;
-        }
-        
-        .download-btn, .view-btn {
-            padding: 8px 15px;
-            font-weight: 500;
-            min-width: 100px;
-            text-align: center;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            border-radius: var(--border-radius);
-            font-size: 12px;
-        }
-        .download-btn {
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .download-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-        }
-        .download-btn:hover::before {
-            left: 100%;
-        }
-        .download-btn:hover {
-            background-color: var(--secondary-hover);
-        }
-        
-        .view-btn {
-            background-color: transparent;
-            color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-            cursor: pointer;
-        }
-        
-        .view-btn:hover {
-            background-color: var(--primary-color);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .error-message {
-            color: var(--error-color);
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #ffebee;
-            border-radius: var(--border-radius);
-            display: none;
-        }
-
-        .success-message {
-            color: var(--success-color);
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #e8f5e9;
-            border-radius: var(--border-radius);
-            display: none;
-        }
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            max-width: 350px;
-            background-color: white;
-            color: #333;
-            padding: 12px 20px;
-            border-radius: 4px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transform: translateY(100px);
-            opacity: 0;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-        }
-
-        .toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .toast-info {
-            border-left: 4px solid var(--primary-color);
-        }
-
-        .toast-success {
-            border-left: 4px solid var(--success-color);
-        }
-
-        .toast-error {
-            border-left: 4px solid var(--error-color);
-        }
-
-        .toast-close {
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-
-        .info-section {
-            margin-top: 40px;
-        }
-
-        .info-section p {
-            margin-bottom: 15px;
-        }
-
-        .info-section ul {
-            margin-left: 20px;
-            margin-bottom: 15px;
-        }
-
-        .info-section li {
-            margin-bottom: 5px;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: white;
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            border-radius: var(--border-radius);
-            padding: 20px;
-            position: relative;
-            overflow: auto;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 24px;
-            color: #777;
-            cursor: pointer;
-            background: none;
-            border: none;
-            transition: var(--transition);
-        }
-
-        .modal-close:hover {
-            color: var(--error-color);
-        }
-
-        .modal-image {
-            display: block;
-            max-width: 100%;
-            max-height: 70vh;
-            margin: 0 auto;
-        }
-
-        .modal-details {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-
-        .modal-details p {
-            margin-bottom: 8px;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .results-grid {
-                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            }
-            
-            .form-row {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .form-row .form-group {
-                min-width: 100%;
-            }
-            
-            .search-filter {
-                margin-left: 0;
-                margin-top: 10px;
-                width: 100%;
-            }
-            
-            .search-filter input {
-                width: 100%;
-            }
-            
-            .search-filter input:focus {
-                width: 100%;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Theme Toggle Button -->
-<button id="theme-toggle" class="theme-toggle"><i class="fas fa-moon"></i></button>
+    <button id="theme-toggle" class="theme-toggle">
+      <i class="fas fa-moon"></i>
+    </button>
     <div class="container">
-        <header>
-            <h1>Eulerity Image Finder</h1>
-            <p>Enter a URL below to find all images on the website</p>
-        </header>
+      <header>
+        <h1>Eulerity Image Finder</h1>
+        <p>Enter a URL below to find all images on the website</p>
+      </header>
 
-        <div class="card">
-            <form id="crawl-form">
-                <div class="form-group">
-                    <label for="url">Website URL</label>
-                    <div class="input-container">
-                        <input type="text" id="url" name="url" placeholder="https://example.com" required>
-                        <button type="button" class="clear-button" id="clear-url">×</button>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="maxPages">Max Pages to Crawl</label>
-                        <input type="number" id="maxPages" name="maxPages" value="100" min="1" max="500">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="threadCount">Thread Count</label>
-                        <input type="number" id="threadCount" name="threadCount" value="8" min="1" max="32">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="crawlDelay">Crawl Delay (ms)</label>
-                        <input type="number" id="crawlDelay" name="crawlDelay" value="500" min="0" max="2000">
-                    </div>
-                </div>
-                
-                <div class="checkbox-group">
-                    <input type="checkbox" id="detectLogos" name="detectLogos" checked>
-                    <label for="detectLogos">Detect Logo Images</label>
-                </div>
-                
-                <button type="submit" id="submit-btn"><i class="fas fa-spider"></i> Start Crawling</button>
-            </form>
-            
-            <div class="error-message" id="error-message"></div>
-            <div class="success-message" id="success-message"></div>
-        </div>
-        
-        <div class="card" id="status-card">
-            <h2>Crawling Status</h2>
-            <div class="loader" id="loader"></div>
-            <div class="progress-container">
-                <div class="progress-bar" id="progress-bar"></div>
+      <div class="card">
+        <form id="crawl-form">
+          <div class="form-group">
+            <label for="url">Website URL</label>
+            <div class="input-container">
+              <input
+                type="text"
+                id="url"
+                name="url"
+                placeholder="https://example.com"
+                required
+              />
+              <button type="button" class="clear-button" id="clear-url">
+                ×
+              </button>
             </div>
-            <p class="status-text" id="status-text">Initializing crawler...</p>
-            <button id="stop-btn"><i class="fas fa-stop-circle"></i> Stop Crawling</button>
-        </div>
-        
-        <div class="results-container" id="results-container" style="display: none;">
-            <h2>Found Images</h2>
-            
-            <div class="filter-controls">
-                <span>Filter: </span>
-                <button class="filter-btn active" data-filter="all">All Images</button>
-                <button class="filter-btn" data-filter="logo">Logos Only</button>
-                <span id="image-count"></span>
-                
-                <div class="search-filter">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="search-input" placeholder="Search images...">
-                </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="maxPages">Max Pages to Crawl</label>
+              <input
+                type="number"
+                id="maxPages"
+                name="maxPages"
+                value="100"
+                min="1"
+                max="500"
+              />
             </div>
-            
-            <div class="results-grid" id="results-grid"></div>
+
+            <div class="form-group">
+              <label for="threadCount">Thread Count</label>
+              <input
+                type="number"
+                id="threadCount"
+                name="threadCount"
+                value="8"
+                min="1"
+                max="32"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="crawlDelay">Crawl Delay (ms)</label>
+              <input
+                type="number"
+                id="crawlDelay"
+                name="crawlDelay"
+                value="500"
+                min="0"
+                max="2000"
+              />
+            </div>
+          </div>
+
+          <div class="checkbox-group">
+            <input
+              type="checkbox"
+              id="detectLogos"
+              name="detectLogos"
+              checked
+            />
+            <label for="detectLogos">Detect Logo Images</label>
+          </div>
+
+          <button type="submit" id="submit-btn">
+            <i class="fas fa-spider"></i> Start Crawling
+          </button>
+        </form>
+
+        <div class="error-message" id="error-message"></div>
+        <div class="success-message" id="success-message"></div>
+      </div>
+
+      <div class="card" id="status-card">
+        <h2>Crawling Status</h2>
+        <div class="loader" id="loader"></div>
+        <div class="progress-container">
+          <div class="progress-bar" id="progress-bar"></div>
         </div>
-        
-        <div class="info-section">
-            <h2>About This Tool</h2>
-            <p>This web crawler tool finds all images on a website by crawling the domain pages. Key features include:</p>
-            <ul>
-                <li>Multi-threaded crawling for faster results</li>
-                <li>Stay within the same domain as the input URL</li>
-                <li>Avoid re-crawling pages that have already been visited</li>
-                <li>Logo detection to identify potential brand images</li>
-                <li>Rate limiting to be a "friendly" crawler</li>
-                <li>Respects robots.txt file for ethical crawling</li>
-            </ul>
-            
-            <p>For best results, try using URLs of content-rich websites. The crawler respects robots.txt and implements a crawl delay to avoid overloading servers.</p>
+        <p class="status-text" id="status-text">Initializing crawler...</p>
+        <button id="stop-btn">
+          <i class="fas fa-stop-circle"></i> Stop Crawling
+        </button>
+      </div>
+
+      <div
+        class="results-container"
+        id="results-container"
+        style="display: none"
+      >
+        <h2>Found Images</h2>
+
+        <div class="filter-controls">
+          <span>Filter: </span>
+          <button class="filter-btn active" data-filter="all">
+            All Images
+          </button>
+          <button class="filter-btn" data-filter="logo">Logos Only</button>
+          <span id="image-count"></span>
+
+          <div class="search-filter">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search images..."
+            />
+          </div>
         </div>
+
+        <div class="results-grid" id="results-grid"></div>
+      </div>
+
+      <div class="info-section">
+        <h2>About This Tool</h2>
+        <p>
+          This web crawler tool finds all images on a website by crawling the
+          domain pages. Key features include:
+        </p>
+        <ul>
+          <li>Multi-threaded crawling for faster results</li>
+          <li>Stay within the same domain as the input URL</li>
+          <li>Avoid re-crawling pages that have already been visited</li>
+          <li>Logo detection to identify potential brand images</li>
+          <li>Rate limiting to be a "friendly" crawler</li>
+          <li>Respects robots.txt file for ethical crawling</li>
+        </ul>
+
+        <p>
+          For best results, try using URLs of content-rich websites. The crawler
+          respects robots.txt and implements a crawl delay to avoid overloading
+          servers.
+        </p>
+      </div>
     </div>
-    
+
     <!-- Image Modal -->
     <div class="modal" id="image-modal">
-        <div class="modal-content">
-            <button class="modal-close" id="modal-close">&times;</button>
-            <img class="modal-image" id="modal-image" src="" alt="Full size image">
-            <div class="modal-details" id="modal-details">
-                <p><strong>URL:</strong> <span id="modal-url"></span></p>
-                <p><strong>Dimensions:</strong> <span id="modal-dimensions">Unknown</span></p>
-                <p><strong>Found on page:</strong> <span id="modal-page">Unknown</span></p>
-                <p><strong>Is Logo:</strong> <span id="modal-logo">No</span></p>
-            </div>
+      <div class="modal-content">
+        <button class="modal-close" id="modal-close">&times;</button>
+        <img
+          class="modal-image"
+          id="modal-image"
+          src=""
+          alt="Full size image"
+        />
+        <div class="modal-details" id="modal-details">
+          <p><strong>URL:</strong> <span id="modal-url"></span></p>
+          <p>
+            <strong>Dimensions:</strong>
+            <span id="modal-dimensions">Unknown</span>
+          </p>
+          <p>
+            <strong>Found on page:</strong> <span id="modal-page">Unknown</span>
+          </p>
+          <p><strong>Is Logo:</strong> <span id="modal-logo">No</span></p>
         </div>
+      </div>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // DOM elements
-            const form = document.getElementById('crawl-form');
-            const submitBtn = document.getElementById('submit-btn');
-            const stopBtn = document.getElementById('stop-btn');
-            const urlInput = document.getElementById('url');
-            const clearUrlBtn = document.getElementById('clear-url');
-            const errorMessage = document.getElementById('error-message');
-            const successMessage = document.getElementById('success-message');
-            const statusCard = document.getElementById('status-card');
-            const progressBar = document.getElementById('progress-bar');
-            const statusText = document.getElementById('status-text');
-            const resultsContainer = document.getElementById('results-container');
-            const resultsGrid = document.getElementById('results-grid');
-            const imageCount = document.getElementById('image-count');
-            const filterBtns = document.querySelectorAll('.filter-btn');
-            const searchInput = document.getElementById('search-input');
-            const modal = document.getElementById('image-modal');
-            const modalImage = document.getElementById('modal-image');
-            const modalClose = document.getElementById('modal-close');
-            const modalUrl = document.getElementById('modal-url');
-            const modalDimensions = document.getElementById('modal-dimensions');
-            const modalPage = document.getElementById('modal-page');
-            const modalLogo = document.getElementById('modal-logo');
-            
-            // Variables
-            let crawlInProgress = false;
-            let statusCheckInterval;
-            let imageResults = [];
-            
-            // Set up URL input with clear button
-            urlInput.addEventListener('input', function() {
-                clearUrlBtn.style.display = this.value ? 'block' : 'none';
-                validateUrl();
-            });
-            
-            clearUrlBtn.addEventListener('click', function() {
-                urlInput.value = '';
-                urlInput.focus();
-                clearUrlBtn.style.display = 'none';
-                validateUrl();
-            });
-            
-            // Initial URL input state
-            clearUrlBtn.style.display = urlInput.value ? 'block' : 'none';
-            validateUrl();
-            
-            // Event listeners
-            form.addEventListener('submit', startCrawling);
-            stopBtn.addEventListener('click', stopCrawling);
-            searchInput.addEventListener('input', filterBySearch);
-            modalClose.addEventListener('click', () => modal.style.display = 'none');
-            
-            // Close modal when clicking outside
-            window.addEventListener('click', function(event) {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
-            
-            // Set up filter buttons
-            filterBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    // Remove active class from all buttons
-                    filterBtns.forEach(b => b.classList.remove('active'));
-                    // Add active class to clicked button
-                    this.classList.add('active');
-                    // Apply filters
-                    applyFilters();
-                });
-            });
-            
-            /**
-             * Validate URL format
-             */
-            function validateUrl() {
-                const url = urlInput.value.trim();
-                if (!url) {
-                    urlInput.classList.remove('valid-url', 'invalid-url');
-                    return;
-                }
-                
-                try {
-                    // Add protocol if missing
-                    let testUrl = url;
-                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                        testUrl = 'https://' + url;
-                    }
-                    new URL(testUrl);
-                    urlInput.classList.add('valid-url');
-                    urlInput.classList.remove('invalid-url');
-                } catch (e) {
-                    urlInput.classList.add('invalid-url');
-                    urlInput.classList.remove('valid-url');
-                }
+      document.addEventListener("DOMContentLoaded", function () {
+        // DOM elements
+        const form = document.getElementById("crawl-form");
+        const submitBtn = document.getElementById("submit-btn");
+        const stopBtn = document.getElementById("stop-btn");
+        const urlInput = document.getElementById("url");
+        const clearUrlBtn = document.getElementById("clear-url");
+        const errorMessage = document.getElementById("error-message");
+        const successMessage = document.getElementById("success-message");
+        const statusCard = document.getElementById("status-card");
+        const progressBar = document.getElementById("progress-bar");
+        const statusText = document.getElementById("status-text");
+        const resultsContainer = document.getElementById("results-container");
+        const resultsGrid = document.getElementById("results-grid");
+        const imageCount = document.getElementById("image-count");
+        const filterBtns = document.querySelectorAll(".filter-btn");
+        const searchInput = document.getElementById("search-input");
+        const modal = document.getElementById("image-modal");
+        const modalImage = document.getElementById("modal-image");
+        const modalClose = document.getElementById("modal-close");
+        const modalUrl = document.getElementById("modal-url");
+        const modalDimensions = document.getElementById("modal-dimensions");
+        const modalPage = document.getElementById("modal-page");
+        const modalLogo = document.getElementById("modal-logo");
+
+        // Variables
+        let crawlInProgress = false;
+        let statusCheckInterval;
+        let imageResults = [];
+
+        // Set up URL input with clear button
+        urlInput.addEventListener("input", function () {
+          clearUrlBtn.style.display = this.value ? "block" : "none";
+          validateUrl();
+        });
+
+        clearUrlBtn.addEventListener("click", function () {
+          urlInput.value = "";
+          urlInput.focus();
+          clearUrlBtn.style.display = "none";
+          validateUrl();
+        });
+
+        // Initial URL input state
+        clearUrlBtn.style.display = urlInput.value ? "block" : "none";
+        validateUrl();
+
+        // Event listeners
+        form.addEventListener("submit", startCrawling);
+        stopBtn.addEventListener("click", stopCrawling);
+        searchInput.addEventListener("input", filterBySearch);
+        modalClose.addEventListener(
+          "click",
+          () => (modal.style.display = "none")
+        );
+
+        // Close modal when clicking outside
+        window.addEventListener("click", function (event) {
+          if (event.target === modal) {
+            modal.style.display = "none";
+          }
+        });
+
+        // Set up filter buttons
+        filterBtns.forEach((btn) => {
+          btn.addEventListener("click", function () {
+            // Remove active class from all buttons
+            filterBtns.forEach((b) => b.classList.remove("active"));
+            // Add active class to clicked button
+            this.classList.add("active");
+            // Apply filters
+            applyFilters();
+          });
+        });
+
+        /**
+         * Validate URL format
+         */
+        function validateUrl() {
+          const url = urlInput.value.trim();
+          if (!url) {
+            urlInput.classList.remove("valid-url", "invalid-url");
+            return;
+          }
+
+          try {
+            // Add protocol if missing
+            let testUrl = url;
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+              testUrl = "https://" + url;
             }
-            /**
-             * Start the crawling process
-             */
-             function startCrawling(e) {
+            new URL(testUrl);
+            urlInput.classList.add("valid-url");
+            urlInput.classList.remove("invalid-url");
+          } catch (e) {
+            urlInput.classList.add("invalid-url");
+            urlInput.classList.remove("valid-url");
+          }
+        }
+        /**
+         * Start the crawling process
+         */
+        function startCrawling(e) {
+          e.preventDefault();
+
+          if (crawlInProgress) {
+            return;
+          }
+
+          // Get form data
+          const url = urlInput.value.trim();
+          const maxPages = document.getElementById("maxPages").value;
+          const threadCount = document.getElementById("threadCount").value;
+          const crawlDelay = document.getElementById("crawlDelay").value;
+          const detectLogos = document.getElementById("detectLogos").checked;
+
+          // Validate URL
+          if (!url || !isValidUrl(url)) {
+            showError("Please enter a valid URL");
+            return;
+          }
+
+          // Hide previous results and messages
+          hideMessages();
+          resultsContainer.style.display = "none";
+          resultsGrid.innerHTML = "";
+          imageResults = [];
+
+          // Show status card
+          statusCard.style.display = "block";
+          progressBar.style.width = "0%";
+          statusText.textContent = "Initializing crawler...";
+
+          // Disable form fields
+          toggleFormFields(true);
+          crawlInProgress = true;
+
+          // Show toast notification
+          showToast("Crawling started", "info");
+
+          // Make API request
+          const apiUrl = `/main?url=${encodeURIComponent(
+            url
+          )}&maxPages=${maxPages}&threadCount=${threadCount}&crawlDelay=${crawlDelay}&detectLogos=${detectLogos}`;
+
+          fetch(apiUrl, {
+            method: "POST",
+          })
+            .then((response) => {
+              if (!response.ok) {
+                // More detailed error parsing
+                return response.json().then((err) => {
+                  throw new Error(err.error || "Crawling failed");
+                });
+              }
+              return response.json();
+            })
+            .then((data) => {
+              // Process results
+              processResults(data);
+              showSuccess(`Found ${data.length} images on ${url}`);
+              showToast(`Found ${data.length} images!`, "success");
+            })
+            .catch((error) => {
+              console.error("Crawling error:", error);
+              showError(
+                error.message || "An unexpected error occurred during crawling"
+              );
+              showToast(
+                "Error: " + (error.message || "Crawling failed"),
+                "error"
+              );
+            })
+            .finally(() => {
+              // Re-enable form fields
+              toggleFormFields(false);
+              crawlInProgress = false;
+              statusCard.style.display = "none";
+              clearInterval(statusCheckInterval);
+            });
+
+          // Start status check
+          startStatusCheck(url);
+        }
+        /**
+         * Start checking the status of the crawl
+         */
+        function startStatusCheck(url) {
+          const statusUrl = `/main?url=${encodeURIComponent(
+            url
+          )}&action=status`;
+          let pagesCrawled = 0;
+
+          statusCheckInterval = setInterval(() => {
+            fetch(statusUrl, {
+              method: "POST",
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.status === "running") {
+                  // Update progress
+                  pagesCrawled = data.pagesCrawled;
+                  const maxPages = parseInt(
+                    document.getElementById("maxPages").value
+                  );
+                  const progress = Math.min(
+                    (pagesCrawled / maxPages) * 100,
+                    100
+                  );
+                  progressBar.style.width = `${progress}%`;
+                  statusText.textContent = `Crawling in progress... (${pagesCrawled} pages crawled)`;
+                } else if (data.status === "completed") {
+                  // Crawling completed
+                  clearInterval(statusCheckInterval);
+                }
+              })
+              .catch((error) => {
+                console.error("Error checking status:", error);
+              });
+          }, 1000);
+        }
+
+        /**
+         * Stop the crawling process
+         */
+        function stopCrawling() {
+          const url = urlInput.value.trim();
+          const stopUrl = `/main?url=${encodeURIComponent(url)}&action=stop`;
+
+          fetch(stopUrl, {
+            method: "POST",
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Stop response:", data);
+            })
+            .catch((error) => {
+              console.error("Error stopping crawler:", error);
+            })
+            .finally(() => {
+              clearInterval(statusCheckInterval);
+              statusCard.style.display = "none";
+              toggleFormFields(false);
+              crawlInProgress = false;
+              showToast("Crawling stopped by user", "info");
+            });
+        }
+
+        /**
+         * Process and display the results
+         */
+        function processResults(data) {
+          imageResults = data;
+
+          // Clear previous results
+          resultsGrid.innerHTML = "";
+
+          // Update image count
+          imageCount.textContent = `(${data.length} images found)`;
+
+          // Display each image
+          data.forEach((image, index) => {
+            const imageCard = document.createElement("div");
+            imageCard.className = "image-card";
+
+            // Set data attributes for filtering
+            imageCard.dataset.isLogo =
+              image.isLogo === true || image.logo === true ? "true" : "false";
+            imageCard.dataset.url = image.url.toLowerCase();
+            if (image.altText) {
+              imageCard.dataset.altText = image.altText.toLowerCase();
+            }
+            if (image.pageFound) {
+              imageCard.dataset.pageFound = image.pageFound.toLowerCase();
+            }
+
+            // Create image container
+            const imageContainer = document.createElement("div");
+            imageContainer.className = "image-container";
+
+            // Create image element
+            const img = document.createElement("img");
+            img.src = image.url;
+            img.alt = image.altText || `Image ${index + 1}`;
+            img.loading = "lazy";
+            img.onerror = function () {
+              this.src =
+                "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20fill%3D%22%23f5f5f5%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.35em%22%20text-anchor%3D%22middle%22%20x%3D%2250%22%20y%3D%2250%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E";
+            };
+
+            // Add click event to show image in modal
+            imageContainer.addEventListener("click", function () {
+              openImageModal(image);
+            });
+
+            imageContainer.appendChild(img);
+            imageCard.appendChild(imageContainer);
+
+            // Create image info
+            const imageInfo = document.createElement("div");
+            imageInfo.className = "image-info";
+
+            // Create URL text
+            const imageUrl = document.createElement("div");
+            imageUrl.className = "image-url";
+            imageUrl.title = image.url;
+            imageUrl.textContent = image.url;
+            imageInfo.appendChild(imageUrl);
+
+            // Add dimensions if available
+            if (image.width > 0 && image.height > 0) {
+              const dimensions = document.createElement("div");
+              dimensions.className = "image-dimensions";
+              dimensions.textContent = `${image.width} × ${image.height}`;
+              imageInfo.appendChild(dimensions);
+            }
+
+            // Add page found info if available
+            if (image.pageFound) {
+              const pageFound = document.createElement("div");
+              pageFound.className = "image-page-found";
+              pageFound.title = image.pageFound;
+
+              try {
+                const pathname = new URL(image.pageFound).pathname;
+                pageFound.textContent = `Found on: ${pathname}`;
+              } catch (e) {
+                pageFound.textContent = `Found on: ${image.pageFound}`;
+              }
+
+              imageInfo.appendChild(pageFound);
+            }
+
+            // Check for logo
+            if (image.isLogo === true || image.logo === true) {
+              const logoBadge = document.createElement("div");
+              logoBadge.className = "logo-badge";
+              logoBadge.textContent = "Logo";
+              imageCard.appendChild(logoBadge);
+            }
+
+            // Add action buttons
+            const imageActions = document.createElement("div");
+            imageActions.className = "image-actions";
+
+            // Download button
+            const downloadBtn = document.createElement("a");
+            downloadBtn.className = "download-btn";
+            downloadBtn.href = image.url;
+            downloadBtn.target = "_blank";
+            downloadBtn.download = "";
+            downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+            downloadBtn.addEventListener("click", function (e) {
+              e.stopPropagation(); // Prevent opening the modal
+              // For some browsers that don't support download attribute
+              if (!this.download) {
                 e.preventDefault();
-                
-                if (crawlInProgress) {
-                    return;
-                }
-                
-                
-                // Get form data
-                const url = urlInput.value.trim();
-                const maxPages = document.getElementById('maxPages').value;
-                const threadCount = document.getElementById('threadCount').value;
-                const crawlDelay = document.getElementById('crawlDelay').value;
-                const detectLogos = document.getElementById('detectLogos').checked;
-                
-                // Validate URL
-                if (!url || !isValidUrl(url)) {
-                    showError('Please enter a valid URL');
-                    return;
-                }
-                
-                // Hide previous results and messages
-                hideMessages();
-                resultsContainer.style.display = 'none';
-                resultsGrid.innerHTML = '';
-                imageResults = [];
-                
-                // Show status card
-                statusCard.style.display = 'block';
-                progressBar.style.width = '0%';
-                statusText.textContent = 'Initializing crawler...';
-                
-                // Disable form fields
-                toggleFormFields(true);
-                crawlInProgress = true;
-                
-                // Show toast notification
-                showToast('Crawling started', 'info');
-                
-                // Make API request
-                const apiUrl = `/main?url=${encodeURIComponent(url)}&maxPages=${maxPages}&threadCount=${threadCount}&crawlDelay=${crawlDelay}&detectLogos=${detectLogos}`;
-                
-                fetch(apiUrl, {
-                    method: 'POST'
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        // More detailed error parsing
-                        return response.json().then(err => {
-                            throw new Error(err.error || 'Crawling failed');
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Process results
-                    processResults(data);
-                    showSuccess(`Found ${data.length} images on ${url}`);
-                    showToast(`Found ${data.length} images!`, 'success');
-                })
-                .catch(error => {
-                    console.error('Crawling error:', error);
-                    showError(error.message || 'An unexpected error occurred during crawling');
-                    showToast('Error: ' + (error.message || 'Crawling failed'), 'error');
-                })
-                .finally(() => {
-                    // Re-enable form fields
-                    toggleFormFields(false);
-                    crawlInProgress = false;
-                    statusCard.style.display = 'none';
-                    clearInterval(statusCheckInterval);
-                });
-                
-                // Start status check
-                startStatusCheck(url);
+                window.open(this.href);
+              }
+            });
+
+            // View button
+            const viewBtn = document.createElement("button");
+            viewBtn.className = "view-btn";
+            viewBtn.innerHTML = '<i class="fas fa-eye"></i> View';
+            viewBtn.addEventListener("click", function (e) {
+              e.stopPropagation(); // Prevent triggering parent's click
+              openImageModal(image);
+            });
+
+            imageActions.appendChild(downloadBtn);
+            imageActions.appendChild(viewBtn);
+            imageInfo.appendChild(imageActions);
+
+            imageCard.appendChild(imageInfo);
+            resultsGrid.appendChild(imageCard);
+          });
+
+          // Show results with animation
+          resultsContainer.style.display = "block";
+          setTimeout(() => {
+            resultsContainer.classList.add("visible");
+          }, 10);
+
+          // Apply default filter (all)
+          applyFilters();
+        }
+        /**
+         * Open image modal with details
+         */
+        function openImageModal(image) {
+          // Handle image load error first, before setting src
+          modalImage.onerror = function () {
+            this.src =
+              "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20fill%3D%22%23f5f5f5%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.35em%22%20text-anchor%3D%22middle%22%20x%3D%2250%22%20y%3D%2250%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E";
+          };
+
+          // Now set the src
+          modalImage.src = image.url;
+          modalUrl.textContent = image.url;
+
+          // Set dimensions
+          if (image.width > 0 && image.height > 0) {
+            modalDimensions.textContent = `${image.width} × ${image.height}`;
+          } else {
+            modalDimensions.textContent = "Unknown";
+          }
+
+          // Set page found
+          if (image.pageFound) {
+            modalPage.textContent = image.pageFound;
+          } else {
+            modalPage.textContent = "Unknown";
+          }
+
+          // Set logo status
+          modalLogo.textContent =
+            image.isLogo === true || image.logo === true ? "Yes" : "No";
+
+          // Show modal
+          modal.style.display = "flex";
+        }
+        /**
+         * Apply both logo filter and search filter
+         */
+        function applyFilters() {
+          const activeFilter =
+            document.querySelector(".filter-btn.active").dataset.filter;
+          const searchQuery = searchInput.value.toLowerCase();
+          const imageCards = document.querySelectorAll(".image-card");
+
+          let visibleCount = 0;
+
+          imageCards.forEach((card) => {
+            // Check logo filter
+            const matchesLogoFilter =
+              activeFilter === "all" ||
+              (activeFilter === "logo" && card.dataset.isLogo === "true");
+
+            // Check search filter with enhanced searching
+            const matchesSearch =
+              !searchQuery ||
+              card.dataset.url.includes(searchQuery) ||
+              (card.dataset.altText &&
+                card.dataset.altText.includes(searchQuery)) ||
+              (card.dataset.pageFound &&
+                card.dataset.pageFound.includes(searchQuery));
+
+            // Show or hide based on both filters
+            if (matchesLogoFilter && matchesSearch) {
+              card.style.display = "block";
+              visibleCount++;
+            } else {
+              card.style.display = "none";
             }
-            /**
-             * Start checking the status of the crawl
-             */
-             function startStatusCheck(url) {
-                const statusUrl = `/main?url=${encodeURIComponent(url)}&action=status`;
-                let pagesCrawled = 0;
-                
-                statusCheckInterval = setInterval(() => {
-                    fetch(statusUrl, {
-                        method: 'POST'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'running') {
-                            // Update progress
-                            pagesCrawled = data.pagesCrawled;
-                            const maxPages = parseInt(document.getElementById('maxPages').value);
-                            const progress = Math.min((pagesCrawled / maxPages) * 100, 100);
-                            progressBar.style.width = `${progress}%`;
-                            statusText.textContent = `Crawling in progress... (${pagesCrawled} pages crawled)`;
-                        } else if (data.status === 'completed') {
-                            // Crawling completed
-                            clearInterval(statusCheckInterval);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error checking status:', error);
-                    });
-                }, 1000);
+          });
+
+          // Update count
+          imageCount.textContent = `(${visibleCount} of ${imageResults.length} images)`;
+        }
+
+        /**
+         * Filter images by search query
+         */
+        function filterBySearch() {
+          applyFilters();
+        }
+
+        /**
+         * Toggle form fields and button state
+         */
+        function toggleFormFields(disabled) {
+          const formElements = form.elements;
+          for (let i = 0; i < formElements.length; i++) {
+            formElements[i].disabled = disabled;
+          }
+          submitBtn.disabled = disabled;
+          clearUrlBtn.style.display = disabled
+            ? "none"
+            : urlInput.value
+            ? "block"
+            : "none";
+        }
+
+        /**
+         * Show error message
+         */
+        function showError(message) {
+          errorMessage.textContent = message;
+          errorMessage.style.display = "block";
+          successMessage.style.display = "none";
+        }
+
+        /**
+         * Show success message
+         */
+        function showSuccess(message) {
+          successMessage.textContent = message;
+          successMessage.style.display = "block";
+          errorMessage.style.display = "none";
+        }
+        /**
+         * Hide all messages
+         */
+        function hideMessages() {
+          errorMessage.style.display = "none";
+          successMessage.style.display = "none";
+        }
+
+        /**
+         * Validate URL format
+         */
+        function isValidUrl(url) {
+          try {
+            // Add protocol if missing
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+              url = "https://" + url;
             }
-            
-            /**
-             * Stop the crawling process
-             */
-            function stopCrawling() {
-                const url = urlInput.value.trim();
-                const stopUrl = `/main?url=${encodeURIComponent(url)}&action=stop`;
-                
-                fetch(stopUrl, {
-                    method: 'POST'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Stop response:', data);
-                })
-                .catch(error => {
-                    console.error('Error stopping crawler:', error);
-                })
-                .finally(() => {
-                    clearInterval(statusCheckInterval);
-                    statusCard.style.display = 'none';
-                    toggleFormFields(false);
-                    crawlInProgress = false;
-                    showToast('Crawling stopped by user', 'info');
-                });
-            }
-            
-            /**
-             * Process and display the results
-             */
-            function processResults(data) {
-                imageResults = data;
-                
-                // Clear previous results
-                resultsGrid.innerHTML = '';
-                
-                // Update image count
-                imageCount.textContent = `(${data.length} images found)`;
-                
-                // Display each image
-                data.forEach((image, index) => {
-                    const imageCard = document.createElement('div');
-                    imageCard.className = 'image-card';
-                    
-                    // Set data attributes for filtering
-                    imageCard.dataset.isLogo = (image.isLogo === true || image.logo === true) ? 'true' : 'false';
-                    imageCard.dataset.url = image.url.toLowerCase();
-                    if (image.altText) {
-                        imageCard.dataset.altText = image.altText.toLowerCase();
-                    }
-                    if (image.pageFound) {
-                        imageCard.dataset.pageFound = image.pageFound.toLowerCase();
-                    }
-                    
-                    // Create image container
-                    const imageContainer = document.createElement('div');
-                    imageContainer.className = 'image-container';
-                    
-                    // Create image element
-                    const img = document.createElement('img');
-                    img.src = image.url;
-                    img.alt = image.altText || `Image ${index + 1}`;
-                    img.loading = 'lazy';
-                    img.onerror = function() {
-                        this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20fill%3D%22%23f5f5f5%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.35em%22%20text-anchor%3D%22middle%22%20x%3D%2250%22%20y%3D%2250%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E';
-                    };
-                    
-                    // Add click event to show image in modal
-                    imageContainer.addEventListener('click', function() {
-                        openImageModal(image);
-                    });
-                    
-                    imageContainer.appendChild(img);
-                    imageCard.appendChild(imageContainer);
-                    
-                    // Create image info
-                    const imageInfo = document.createElement('div');
-                    imageInfo.className = 'image-info';
-                    
-                    // Create URL text
-                    const imageUrl = document.createElement('div');
-                    imageUrl.className = 'image-url';
-                    imageUrl.title = image.url;
-                    imageUrl.textContent = image.url;
-                    imageInfo.appendChild(imageUrl);
-                    
-                    // Add dimensions if available
-                    if (image.width > 0 && image.height > 0) {
-                        const dimensions = document.createElement('div');
-                        dimensions.className = 'image-dimensions';
-                        dimensions.textContent = `${image.width} × ${image.height}`;
-                        imageInfo.appendChild(dimensions);
-                    }
-                    
-                    // Add page found info if available
-                    if (image.pageFound) {
-                        const pageFound = document.createElement('div');
-                        pageFound.className = 'image-page-found';
-                        pageFound.title = image.pageFound;
-                        
-                        try {
-                            const pathname = new URL(image.pageFound).pathname;
-                            pageFound.textContent = `Found on: ${pathname}`;
-                        } catch (e) {
-                            pageFound.textContent = `Found on: ${image.pageFound}`;
-                        }
-                        
-                        imageInfo.appendChild(pageFound);
-                    }
-                    
-                    // Check for logo
-                    if (image.isLogo === true || image.logo === true) {
-                        const logoBadge = document.createElement('div');
-                        logoBadge.className = 'logo-badge';
-                        logoBadge.textContent = 'Logo';
-                        imageCard.appendChild(logoBadge);
-                    }
-                    
-                    // Add action buttons
-                    const imageActions = document.createElement('div');
-                    imageActions.className = 'image-actions';
-                    
-                    // Download button
-                    const downloadBtn = document.createElement('a');
-                    downloadBtn.className = 'download-btn';
-                    downloadBtn.href = image.url;
-                    downloadBtn.target = '_blank';
-                    downloadBtn.download = '';
-                    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
-                    downloadBtn.addEventListener('click', function(e) {
-                        e.stopPropagation(); // Prevent opening the modal
-                        // For some browsers that don't support download attribute
-                        if (!this.download) {
-                            e.preventDefault();
-                            window.open(this.href);
-                        }
-                    });
-                    
-                    // View button
-                    const viewBtn = document.createElement('button');
-                    viewBtn.className = 'view-btn';
-                    viewBtn.innerHTML = '<i class="fas fa-eye"></i> View';
-                    viewBtn.addEventListener('click', function(e) {
-                        e.stopPropagation(); // Prevent triggering parent's click
-                        openImageModal(image);
-                    });
-                    
-                    imageActions.appendChild(downloadBtn);
-                    imageActions.appendChild(viewBtn);
-                    imageInfo.appendChild(imageActions);
-                    
-                    imageCard.appendChild(imageInfo);
-                    resultsGrid.appendChild(imageCard);
-                });
-                
-                // Show results with animation
-                resultsContainer.style.display = 'block';
-                setTimeout(() => {
-                    resultsContainer.classList.add('visible');
-                }, 10);
-                
-                // Apply default filter (all)
-                applyFilters();
-            }
-            /**
-             * Open image modal with details
-             */
-             function openImageModal(image) {
-                // Handle image load error first, before setting src
-                modalImage.onerror = function() {
-                    this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20fill%3D%22%23f5f5f5%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.35em%22%20text-anchor%3D%22middle%22%20x%3D%2250%22%20y%3D%2250%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E';
-                };
-                
-                // Now set the src
-                modalImage.src = image.url;
-                modalUrl.textContent = image.url;
-                
-                // Set dimensions
-                if (image.width > 0 && image.height > 0) {
-                    modalDimensions.textContent = `${image.width} × ${image.height}`;
-                } else {
-                    modalDimensions.textContent = 'Unknown';
-                }
-                
-                // Set page found
-                if (image.pageFound) {
-                    modalPage.textContent = image.pageFound;
-                } else {
-                    modalPage.textContent = 'Unknown';
-                }
-                
-                // Set logo status
-                modalLogo.textContent = (image.isLogo === true || image.logo === true) ? 'Yes' : 'No';
-                
-                // Show modal
-                modal.style.display = 'flex';
-            }
-            /**
-             * Apply both logo filter and search filter
-             */
-             function applyFilters() {
-                const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
-                const searchQuery = searchInput.value.toLowerCase();
-                const imageCards = document.querySelectorAll('.image-card');
-                
-                let visibleCount = 0;
-                
-                imageCards.forEach(card => {
-                    // Check logo filter
-                    const matchesLogoFilter = activeFilter === 'all' || 
-                                             (activeFilter === 'logo' && card.dataset.isLogo === 'true');
-                    
-                    // Check search filter with enhanced searching
-                    const matchesSearch = !searchQuery || 
-                                         card.dataset.url.includes(searchQuery) || 
-                                         (card.dataset.altText && card.dataset.altText.includes(searchQuery)) || 
-                                         (card.dataset.pageFound && card.dataset.pageFound.includes(searchQuery));
-                    
-                    // Show or hide based on both filters
-                    if (matchesLogoFilter && matchesSearch) {
-                        card.style.display = 'block';
-                        visibleCount++;
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-                
-                // Update count
-                imageCount.textContent = `(${visibleCount} of ${imageResults.length} images)`;
-            }
-            
-            /**
-             * Filter images by search query
-             */
-            function filterBySearch() {
-                applyFilters();
-            }
-            
-            /**
-             * Toggle form fields and button state
-             */
-            function toggleFormFields(disabled) {
-                const formElements = form.elements;
-                for (let i = 0; i < formElements.length; i++) {
-                    formElements[i].disabled = disabled;
-                }
-                submitBtn.disabled = disabled;
-                clearUrlBtn.style.display = disabled ? 'none' : (urlInput.value ? 'block' : 'none');
-            }
-            
-            /**
-             * Show error message
-             */
-            function showError(message) {
-                errorMessage.textContent = message;
-                errorMessage.style.display = 'block';
-                successMessage.style.display = 'none';
-            }
-            
-            /**
-             * Show success message
-             */
-            function showSuccess(message) {
-                successMessage.textContent = message;
-                successMessage.style.display = 'block';
-                errorMessage.style.display = 'none';
-            }
-            /**
-             * Hide all messages
-             */
-             function hideMessages() {
-                errorMessage.style.display = 'none';
-                successMessage.style.display = 'none';
-            }
-            
-            /**
-             * Validate URL format
-             */
-            function isValidUrl(url) {
-                try {
-                    // Add protocol if missing
-                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                        url = 'https://' + url;
-                    }
-                    new URL(url);
-                    return true;
-                } catch (e) {
-                    return false;
-                }
-            }
-            
-            /**
-             * Show toast notification
-             */
-            function showToast(message, type = 'info') {
-                // Remove existing toasts
-                const existingToast = document.querySelector('.toast');
-                if (existingToast) {
-                    existingToast.remove();
-                }
-                
-                // Create toast element
-                const toast = document.createElement('div');
-                toast.className = `toast toast-${type}`;
-                toast.textContent = message;
-                
-                // Add close button
-                const closeBtn = document.createElement('button');
-                closeBtn.className = 'toast-close';
-                closeBtn.innerHTML = '&times;';
-                closeBtn.addEventListener('click', () => toast.remove());
-                toast.appendChild(closeBtn);
-                
-                // Add to document
-                document.body.appendChild(toast);
-                
-                // Animate in
-                setTimeout(() => {
-                    toast.classList.add('show');
-                }, 10);
-                
-                // Auto remove
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => {
-                        toast.remove();
-                    }, 300);
-                }, 5000);
+            new URL(url);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        }
+
+        /**
+         * Show toast notification
+         */
+        function showToast(message, type = "info") {
+          // Remove existing toasts
+          const existingToast = document.querySelector(".toast");
+          if (existingToast) {
+            existingToast.remove();
+          }
+
+          // Create toast element
+          const toast = document.createElement("div");
+          toast.className = `toast toast-${type}`;
+          toast.textContent = message;
+
+          // Add close button
+          const closeBtn = document.createElement("button");
+          closeBtn.className = "toast-close";
+          closeBtn.innerHTML = "&times;";
+          closeBtn.addEventListener("click", () => toast.remove());
+          toast.appendChild(closeBtn);
+
+          // Add to document
+          document.body.appendChild(toast);
+
+          // Animate in
+          setTimeout(() => {
+            toast.classList.add("show");
+          }, 10);
+
+          // Auto remove
+          setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => {
+              toast.remove();
+            }, 300);
+          }, 5000);
+        }
+      });
+      // Dark mode toggle
+      const themeToggle = document.getElementById("theme-toggle");
+      const body = document.body;
+      const themeIcon = themeToggle.querySelector("i");
+
+      // Check for saved theme preference
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme === "dark") {
+        body.classList.add("dark-mode");
+        themeIcon.classList.remove("fa-moon");
+        themeIcon.classList.add("fa-sun");
+      }
+
+      themeToggle.addEventListener("click", () => {
+        body.classList.toggle("dark-mode");
+
+        // Update icon
+        if (body.classList.contains("dark-mode")) {
+          themeIcon.classList.remove("fa-moon");
+          themeIcon.classList.add("fa-sun");
+          localStorage.setItem("theme", "dark");
+        } else {
+          themeIcon.classList.remove("fa-sun");
+          themeIcon.classList.add("fa-moon");
+          localStorage.setItem("theme", "light");
+        }
+      });
+
+      // Back to top functionality
+      const backToTopBtn = document.getElementById("back-to-top");
+    
+    if (backToTopBtn) {
+        window.addEventListener("scroll", () => {
+            if (window.scrollY > 300) {
+                backToTopBtn.classList.add("visible");
+            } else {
+                backToTopBtn.classList.remove("visible");
             }
         });
-        // Dark mode toggle
-const themeToggle = document.getElementById('theme-toggle');
-const body = document.body;
-const themeIcon = themeToggle.querySelector('i');
+        
+        backToTopBtn.addEventListener("click", () => {
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+            });
+        });
+    } else {
+        console.error("Back to top button not found in the DOM");
+    }
 
-// Check for saved theme preference
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-    body.classList.add('dark-mode');
-    themeIcon.classList.remove('fa-moon');
-    themeIcon.classList.add('fa-sun');
-}
-
-themeToggle.addEventListener('click', () => {
-    body.classList.toggle('dark-mode');
     
-    // Update icon
-    if (body.classList.contains('dark-mode')) {
-        themeIcon.classList.remove('fa-moon');
-        themeIcon.classList.add('fa-sun');
-        localStorage.setItem('theme', 'dark');
-    } else {
-        themeIcon.classList.remove('fa-sun');
-        themeIcon.classList.add('fa-moon');
-        localStorage.setItem('theme', 'light');
-    }
-});
-
-// Back to top functionality
-const backToTopBtn = document.getElementById('back-to-top');
-
-window.addEventListener('scroll', () => {
-    if (window.scrollY > 300) {
-        backToTopBtn.classList.add('visible');
-    } else {
-        backToTopBtn.classList.remove('visible');
-    }
-});
-
-backToTopBtn.addEventListener('click', () => {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-});
     </script>
     <!-- Back to Top Button -->
-<button id="back-to-top" class="back-to-top"><i class="fas fa-arrow-up"></i></button>
-</body>
+    <button id="back-to-top" class="back-to-top"><i class="fas fa-arrow-up"></i></button>
+  </body>
 </html>
