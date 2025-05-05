@@ -157,6 +157,31 @@
         color: white;
         box-shadow: var(--box-shadow);
       }
+      .scroll-to-bottom {
+        position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1000;
+  font-size: 18px;
+  border: none;
+      }
+    
+      .scroll-to-bottom:hover {
+        transform: translateY(5px);
+        background-color: var(--primary-hover);
+      }
+        
 
       /* Back to Top Button */
       .back-to-top {
@@ -717,15 +742,35 @@
         .search-filter input {
           width: 100%;
         }
-
+        
         .search-filter input:focus {
           width: 100%;
         }
       }
+      /* Modal Dark Mode Support */
+body.dark-mode .modal-content {
+    background-color: var(--dark-mode-card-bg);
+    color: var(--dark-mode-text);
+  }
+  
+  body.dark-mode .modal-details p {
+    color: var(--dark-mode-text);
+    opacity: 0.9;
+  }
+  
+  body.dark-mode .modal-close {
+    color: var(--dark-mode-text);
+  }
+  
+  body.dark-mode .modal-close:hover {
+    color: var(--accent-color);
+  }
+  
     </style>
   </head>
   <body>
     <!-- Theme Toggle Button -->
+    
     <button id="theme-toggle" class="theme-toggle">
       <i class="fas fa-moon"></i>
     </button>
@@ -951,7 +996,30 @@
           "click",
           () => (modal.style.display = "none")
         );
+        const scrollToBottomBtn = document.getElementById("scroll-to-bottom");
 
+        scrollToBottomBtn.addEventListener("click", () => {
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: "smooth"
+          });
+        });
+        const backToTopBtn = document.getElementById("back-to-top");
+
+window.addEventListener("scroll", () => {
+    if (window.scrollY > 300) {
+      backToTopBtn.classList.add("visible");
+    } else {
+      backToTopBtn.classList.remove("visible");
+    }
+  });
+  
+  backToTopBtn.addEventListener("click", () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  });
         // Close modal when clicking outside
         window.addEventListener("click", function (event) {
           if (event.target === modal) {
@@ -1037,9 +1105,8 @@
           showToast("Crawling started", "info");
 
           // Make API request
-          const apiUrl = `/main?url=${encodeURIComponent(
-            url
-          )}&maxPages=${maxPages}&threadCount=${threadCount}&crawlDelay=${crawlDelay}&detectLogos=${detectLogos}`;
+          const apiUrl = `/main?url=${encodeURIComponent(url)}&maxPages=${maxPages}&threadCount=${threadCount}&crawlDelay=${crawlDelay}&detectLogos=${detectLogos}`;
+
 
           fetch(apiUrl, {
             method: "POST",
@@ -1488,31 +1555,12 @@
         }
       });
 
-      // Back to top functionality
-      const backToTopBtn = document.getElementById("back-to-top");
-    
-    if (backToTopBtn) {
-        window.addEventListener("scroll", () => {
-            if (window.scrollY > 300) {
-                backToTopBtn.classList.add("visible");
-            } else {
-                backToTopBtn.classList.remove("visible");
-            }
-        });
-        
-        backToTopBtn.addEventListener("click", () => {
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth",
-            });
-        });
-    } else {
-        console.error("Back to top button not found in the DOM");
-    }
-
-    
+       
     </script>
     <!-- Back to Top Button -->
-    <button id="back-to-top" class="back-to-top"><i class="fas fa-arrow-up"></i></button>
+    <button id="scroll-to-bottom" class="scroll-to-bottom" title="Scroll to Bottom">
+        <i class="fas fa-arrow-down"></i>
+      </button>
+    <button id="back-to-top" class="back-to-top" title="Scroll to Top"><i class="fas fa-arrow-up"></i></button>
   </body>
 </html>
