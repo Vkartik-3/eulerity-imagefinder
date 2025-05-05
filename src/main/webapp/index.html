@@ -578,7 +578,7 @@
             /**
              * Start the crawling process
              */
-            function startCrawling(e) {
+             function startCrawling(e) {
                 e.preventDefault();
                 
                 if (crawlInProgress) {
@@ -621,8 +621,9 @@
                 })
                 .then(response => {
                     if (!response.ok) {
+                        // More detailed error parsing
                         return response.json().then(err => {
-                            throw new Error(err.error || 'An error occurred');
+                            throw new Error(err.error || 'Crawling failed');
                         });
                     }
                     return response.json();
@@ -633,7 +634,8 @@
                     showSuccess(`Found ${data.length} images on ${url}`);
                 })
                 .catch(error => {
-                    showError(error.message);
+                    console.error('Crawling error:', error);
+                    showError(error.message || 'An unexpected error occurred during crawling');
                 })
                 .finally(() => {
                     // Re-enable form fields
@@ -876,5 +878,4 @@
     </script>
 </body>
 </html>
-
 

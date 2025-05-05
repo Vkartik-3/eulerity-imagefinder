@@ -1,5 +1,7 @@
 package com.eulerity.hackathon.imagefinder.crawler;
 
+import org.jsoup.Connection;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -7,6 +9,7 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,6 +45,29 @@ public class WebCrawler {
     private final Object lock = new Object();
     private boolean isRunning;
     private RobotsTxtParser robotsTxtParser;
+    
+    // Define allowed schemes and content types
+    private static final Set<String> ALLOWED_SCHEMES = Set.of("http", "https");
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+        "text/html", "application/xhtml+xml", "application/xml", "text/xml");
+    
+    // Maximum URL depth to crawl
+    private static final int MAX_URL_DEPTH = 20;
+    
+    // Maximum redirects to follow
+    private static final int MAX_REDIRECTS = 5;
+    
+    // Timeout settings
+    private static final int CONNECTION_TIMEOUT_MS = 10000; // 10 seconds
+    private static final int READ_TIMEOUT_MS = 15000; // 15 seconds
+    
+    // Map to track redirect chains to detect loops
+    private final Map<String, Set<String>> redirectChains = new ConcurrentHashMap<>();
+    
+    // URL components to ignore in query parameters
+    private static final Set<String> IGNORED_QUERY_PARAMS = Set.of(
+        "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+        "fbclid", "gclid", "msclkid", "ref", "source", "session", "timestamp");
 
     /**
      * Constructor for WebCrawler
@@ -52,7 +78,7 @@ public class WebCrawler {
      * @param crawlDelayMs Delay between requests in milliseconds (to be "friendly")
      */
     public WebCrawler(String url, int maxPages, int threadCount, int crawlDelayMs) {
-        this.baseUrl = normalizeUrl(url);
+        this.baseUrl = canonicalizeUrl(url);
         this.domain = extractDomain(this.baseUrl);
         this.visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
         this.imageUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -83,6 +109,7 @@ public class WebCrawler {
         visitedUrls.clear();
         imageUrls.clear();
         imageMetadata.clear();
+        redirectChains.clear();
         pagesCrawled.set(0);
 
         // Add the base URL to the queue
@@ -106,6 +133,17 @@ public class WebCrawler {
 
         // Return the results
         return new ArrayList<>(imageUrls);
+    }
+    
+    /**
+     * Forcibly stop the crawler
+     */
+    public void stop() {
+        if (isRunning) {
+            isRunning = false;
+            executor.shutdownNow();
+            System.out.println("Crawler stopped by user request");
+        }
     }
     
     /**
@@ -148,29 +186,52 @@ public class WebCrawler {
      * @param url The URL to queue
      */
     private void queueUrl(String url) {
-        String normalizedUrl = normalizeUrl(url);
+        // Skip empty or invalid URLs
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+        
+        // Check URL scheme
+        try {
+            URL urlObj = new URL(url);
+            String scheme = urlObj.getProtocol();
+            if (!ALLOWED_SCHEMES.contains(scheme.toLowerCase())) {
+                return;
+            }
+        } catch (MalformedURLException e) {
+            return;
+        }
+        
+        // Check URL depth to prevent deep crawling
+        int depth = getUrlDepth(url);
+        if (depth > MAX_URL_DEPTH) {
+            System.out.println("Skipping URL (too deep): " + url);
+            return;
+        }
+        
+        String canonicalUrl = canonicalizeUrl(url);
 
         // Skip if already visited or if max pages reached
-        if (visitedUrls.contains(normalizedUrl) || pagesCrawled.get() >= maxPages) {
+        if (visitedUrls.contains(canonicalUrl) || pagesCrawled.get() >= maxPages) {
             return;
         }
 
         // Check if URL is in the same domain
-        if (!isSameDomain(normalizedUrl)) {
+        if (!isSameDomain(canonicalUrl)) {
             return;
         }
         
         // Check robots.txt rules
-        if (!robotsTxtParser.isAllowed(normalizedUrl)) {
-            System.out.println("Skipping URL (disallowed by robots.txt): " + normalizedUrl);
+        if (!robotsTxtParser.isAllowed(canonicalUrl)) {
+            System.out.println("Skipping URL (disallowed by robots.txt): " + canonicalUrl);
             return;
         }
 
         // Mark as visited
         synchronized (lock) {
-            if (visitedUrls.add(normalizedUrl)) {
+            if (visitedUrls.add(canonicalUrl)) {
                 // Add to queue for processing
-                urlQueue.add(normalizedUrl);
+                urlQueue.add(canonicalUrl);
             }
         }
     }
@@ -185,11 +246,53 @@ public class WebCrawler {
         pagesCrawled.incrementAndGet();
         
         try {
-            // Connect to the URL and get the HTML document
-            Document document = Jsoup.connect(url)
+            // Initialize redirect tracking for this URL
+            Set<String> redirectsVisited = new HashSet<>();
+            redirectsVisited.add(canonicalizeUrl(url));
+            redirectChains.put(url, redirectsVisited);
+            
+            // Configure connection with custom settings
+            Connection connection = Jsoup.connect(url)
                     .userAgent("Eulerity-Crawler/1.0")
-                    .timeout(10000)
-                    .get();
+                    .timeout(CONNECTION_TIMEOUT_MS)
+                    .maxBodySize(1024 * 1024) // 1MB max body size
+                    .followRedirects(false) // Handle redirects manually
+                    .ignoreContentType(true) // Check content type ourselves
+                    .ignoreHttpErrors(false);
+            
+            // Execute initial request
+            Connection.Response response = executeRequestWithRedirects(connection, url, MAX_REDIRECTS);
+            if (response == null) {
+                return; // Failed to get response after redirects
+            }
+            
+            // Get the final URL after possible redirects
+            String finalUrl = response.url().toString();
+            String canonicalFinalUrl = canonicalizeUrl(finalUrl);
+            
+            // If the URL was redirected, update the visited URLs
+            if (!url.equals(finalUrl)) {
+                // Add the redirect target to visited URLs
+                synchronized (lock) {
+                    visitedUrls.add(canonicalFinalUrl);
+                }
+                
+                // Check if the redirect target is in the same domain
+                if (!isSameDomain(canonicalFinalUrl)) {
+                    System.out.println("Skipping URL (redirect to different domain): " + canonicalFinalUrl);
+                    return;
+                }
+            }
+            
+            // Check content type
+            String contentType = response.contentType();
+            if (contentType == null || !isAllowedContentType(contentType)) {
+                System.out.println("Skipping URL (disallowed content type: " + contentType + "): " + url);
+                return;
+            }
+            
+            // Parse the document from the response
+            Document document = response.parse();
 
             // Extract images
             extractImages(document, url);
@@ -197,9 +300,114 @@ public class WebCrawler {
             // Extract links for further crawling
             extractLinks(document);
 
+        } catch (SocketTimeoutException e) {
+            System.err.println("Error processing URL: " + url + " - Read timed out");
+        } catch (HttpStatusException e) {
+            System.err.println("Error processing URL: " + url + " - HTTP error fetching URL");
         } catch (IOException e) {
             System.err.println("Error processing URL: " + url + " - " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Unexpected error processing URL: " + url + " - " + e.getMessage());
+        } finally {
+            // Clean up redirect tracking for this URL
+            redirectChains.remove(url);
         }
+    }
+    
+    /**
+ * Execute a request and follow redirects manually with improved loop detection
+ * 
+ * @param connection The JSoup connection
+ * @param originalUrl The original URL
+ * @param maxRedirects Maximum number of redirects to follow
+ * @return The final response or null if failed
+ */
+private Connection.Response executeRequestWithRedirects(Connection connection, String originalUrl, int maxRedirects) 
+throws IOException {
+String currentUrl = originalUrl;
+int redirectCount = 0;
+Set<String> visitedUrls = new HashSet<>();
+
+while (redirectCount < maxRedirects) {
+try {
+    Connection.Response response = connection.execute();
+    int statusCode = response.statusCode();
+    
+    // Check if it's a redirect status code
+    boolean isRedirect = (statusCode >= 300 && statusCode < 400);
+    
+    if (!isRedirect) {
+        return response; // Not a redirect, return the response
+    }
+    
+    // Get the redirect location
+    String location = response.header("Location");
+    if (location == null || location.isEmpty()) {
+        return response; // No valid redirect location
+    }
+    
+    // Resolve relative redirects
+    URL base = new URL(currentUrl);
+    URL redirectUrl = new URL(base, location);
+    String redirectUrlStr = redirectUrl.toString();
+    
+    // Normalize the URLs to prevent false positives in redirect loop detection
+    String normalizedCurrentUrl = normalizeUrl(currentUrl);
+    String normalizedRedirectUrl = normalizeUrl(redirectUrlStr);
+    
+    // More sophisticated redirect loop detection
+    if (visitedUrls.contains(normalizedRedirectUrl)) {
+        System.out.println("Potential redirect loop detected. Stopping at: " + redirectUrlStr);
+        return response; // Return the last valid response
+    }
+    
+    // Add normalized URL to visited set
+    visitedUrls.add(normalizedRedirectUrl);
+    
+    // Update current URL and connection
+    currentUrl = redirectUrlStr;
+    connection = Jsoup.connect(currentUrl)
+            .userAgent("Eulerity-Crawler/1.0")
+            .timeout(CONNECTION_TIMEOUT_MS)
+            .maxBodySize(1024 * 1024)
+            .followRedirects(false)
+            .ignoreContentType(true)
+            .ignoreHttpErrors(false);
+    
+    redirectCount++;
+    
+} catch (IOException e) {
+    // Log the specific error
+    System.err.println("Error during redirect handling: " + e.getMessage());
+    throw e; // Re-throw to maintain original error handling
+}
+}
+
+// Maximum redirects reached
+System.err.println("Maximum redirects reached for URL: " + currentUrl);
+return null;
+}
+    
+    
+    /**
+     * Check if the content type is allowed for parsing
+     * 
+     * @param contentType The content type to check
+     * @return true if allowed, false otherwise
+     */
+    private boolean isAllowedContentType(String contentType) {
+        // Remove charset and other parameters
+        if (contentType.contains(";")) {
+            contentType = contentType.substring(0, contentType.indexOf(";")).trim();
+        }
+        
+        for (String allowedType : ALLOWED_CONTENT_TYPES) {
+            if (contentType.toLowerCase().startsWith(allowedType)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**
@@ -215,6 +423,33 @@ public class WebCrawler {
             String imageUrl = img.absUrl("src");
             if (!imageUrl.isEmpty()) {
                 addImage(imageUrl, img, pageUrl);
+            }
+            
+            // Check for lazy-loaded images in data attributes
+            String dataSrc = img.attr("data-src");
+            if (!dataSrc.isEmpty()) {
+                String fullDataSrc = resolveUrl(pageUrl, dataSrc);
+                if (!fullDataSrc.isEmpty()) {
+                    addImage(fullDataSrc, img, pageUrl);
+                }
+            }
+            
+            // Check other common data attributes for images
+            String[] dataAttrs = {"data-original", "data-lazy-src", "data-srcset", "data-lazy"};
+            for (String attr : dataAttrs) {
+                String attrValue = img.attr(attr);
+                if (!attrValue.isEmpty()) {
+                    String fullAttrSrc = resolveUrl(pageUrl, attrValue);
+                    if (!fullAttrSrc.isEmpty()) {
+                        addImage(fullAttrSrc, img, pageUrl);
+                    }
+                }
+            }
+            
+            // Check srcset attribute
+            String srcset = img.attr("srcset");
+            if (!srcset.isEmpty()) {
+                extractImagesFromSrcset(srcset, img, pageUrl);
             }
         }
 
@@ -237,65 +472,108 @@ public class WebCrawler {
             }
         }
     }
+    
+    /**
+     * Extract images from srcset attribute
+     * 
+     * @param srcset The srcset attribute value
+     * @param imgElement The img element
+     * @param pageUrl The page URL
+     */
+    private void extractImagesFromSrcset(String srcset, Element imgElement, String pageUrl) {
+        // Split by commas (separates different image definitions)
+        String[] srcSetParts = srcset.split(",");
+        
+        for (String part : srcSetParts) {
+            // Extract the URL (ignoring the descriptor)
+            String[] spaceSplit = part.trim().split("\\s+");
+            if (spaceSplit.length > 0) {
+                String imageUrl = spaceSplit[0].trim();
+                String fullImageUrl = resolveUrl(pageUrl, imageUrl);
+                if (!fullImageUrl.isEmpty()) {
+                    addImage(fullImageUrl, imgElement, pageUrl);
+                }
+            }
+        }
+    }
 
-/**
- * Add an image to the results with metadata
- * 
- * @param imageUrl The URL of the image
- * @param imgElement The img element (may be null for CSS background images)
- * @param pageUrl The URL of the page where the image was found
- */
-private void addImage(String imageUrl, Element imgElement, String pageUrl) {
-    // Only add if it's a new image
-    if (!imageUrls.contains(imageUrl)) {
-        imageUrls.add(imageUrl);
-        
-        // Create metadata
-        ImageMetadata metadata = new ImageMetadata(imageUrl);
-        metadata.setPageFound(pageUrl);
-        
-        // Extract additional metadata if available
-        if (imgElement != null) {
-            // Extract alt text
-            String altText = imgElement.attr("alt");
-            if (!altText.isEmpty()) {
-                metadata.setAltText(altText);
-            }
-            
-            // Extract dimensions if available
-            String width = imgElement.attr("width");
-            String height = imgElement.attr("height");
-            if (!width.isEmpty()) {
-                try {
-                    metadata.setWidth(Integer.parseInt(width));
-                } catch (NumberFormatException e) {
-                    // Ignore invalid width
-                }
-            }
-            if (!height.isEmpty()) {
-                try {
-                    metadata.setHeight(Integer.parseInt(height));
-                } catch (NumberFormatException e) {
-                    // Ignore invalid height
-                }
-            }
-            
-            // Check if it's a logo using the enhanced detection
-            metadata.setLogo(LogoDetector.isLikelyLogo(
-                    imageUrl, 
-                    metadata.getWidth(), 
-                    metadata.getHeight(), 
-                    metadata.getAltText(),
-                    pageUrl));
-        } else {
-            // For non-img elements, check if it's a logo using URL and page context
-            metadata.setLogo(LogoDetector.isLikelyLogo(imageUrl, -1, -1, null, pageUrl));
+    /**
+     * Add an image to the results with metadata
+     * 
+     * @param imageUrl The URL of the image
+     * @param imgElement The img element (may be null for CSS background images)
+     * @param pageUrl The URL of the page where the image was found
+     */
+    private void addImage(String imageUrl, Element imgElement, String pageUrl) {
+        // Skip empty or invalid image URLs
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return;
         }
         
-        // Store metadata
-        imageMetadata.put(imageUrl, metadata);
+        // Skip data URLs
+        if (imageUrl.startsWith("data:")) {
+            return;
+        }
+        
+        // Canonicalize image URL
+        imageUrl = canonicalizeUrl(imageUrl);
+        
+        // Only add if it's a new image
+        if (!imageUrls.contains(imageUrl)) {
+            synchronized (lock) {
+                // Check again in case another thread added it
+                if (!imageUrls.add(imageUrl)) {
+                    return;
+                }
+            }
+            
+            // Create metadata
+            ImageMetadata metadata = new ImageMetadata(imageUrl);
+            metadata.setPageFound(pageUrl);
+            
+            // Extract additional metadata if available
+            if (imgElement != null) {
+                // Extract alt text
+                String altText = imgElement.attr("alt");
+                if (!altText.isEmpty()) {
+                    metadata.setAltText(altText);
+                }
+                
+                // Extract dimensions if available
+                String width = imgElement.attr("width");
+                String height = imgElement.attr("height");
+                if (!width.isEmpty()) {
+                    try {
+                        metadata.setWidth(Integer.parseInt(width));
+                    } catch (NumberFormatException e) {
+                        // Ignore invalid width
+                    }
+                }
+                if (!height.isEmpty()) {
+                    try {
+                        metadata.setHeight(Integer.parseInt(height));
+                    } catch (NumberFormatException e) {
+                        // Ignore invalid height
+                    }
+                }
+                
+                // Check if it's a logo using the enhanced detection
+                metadata.setLogo(LogoDetector.isLikelyLogo(
+                        imageUrl, 
+                        metadata.getWidth(), 
+                        metadata.getHeight(), 
+                        metadata.getAltText(),
+                        pageUrl));
+            } else {
+                // For non-img elements, check if it's a logo using URL and page context
+                metadata.setLogo(LogoDetector.isLikelyLogo(imageUrl, -1, -1, null, pageUrl));
+            }
+            
+            // Store metadata
+            imageMetadata.put(imageUrl, metadata);
+        }
     }
-}
+
     /**
      * Extract image URL from CSS style attribute
      * 
@@ -315,14 +593,45 @@ private void addImage(String imageUrl, Element imgElement, String pageUrl) {
                     (url.startsWith("'") && url.endsWith("'"))) {
                     url = url.substring(1, url.length() - 1);
                 }
-                if (!url.isEmpty() && (url.startsWith("http") || url.startsWith("/"))) {
-                    // Convert relative URLs to absolute
-                    if (url.startsWith("/")) {
-                        url = domain + url;
+                if (!url.isEmpty() && (url.startsWith("http") || url.startsWith("/") || url.startsWith("./") || url.startsWith("../"))) {
+                    // Skip data URLs
+                    if (url.startsWith("data:")) {
+                        return;
                     }
-                    addImage(url, null, pageUrl);
+                    
+                    // Convert relative URLs to absolute
+                    String fullUrl = resolveUrl(pageUrl, url);
+                    if (!fullUrl.isEmpty()) {
+                        addImage(fullUrl, null, pageUrl);
+                    }
                 }
             }
+        }
+    }
+    
+    /**
+     * Resolve a relative URL against a base URL
+     * 
+     * @param baseUrl The base URL
+     * @param relativeUrl The relative URL
+     * @return The resolved URL or empty string if invalid
+     */
+    private String resolveUrl(String baseUrl, String relativeUrl) {
+        if (relativeUrl == null || relativeUrl.isEmpty()) {
+            return "";
+        }
+        
+        // Already absolute
+        if (relativeUrl.startsWith("http")) {
+            return relativeUrl;
+        }
+        
+        try {
+            URL base = new URL(baseUrl);
+            URL resolved = new URL(base, relativeUrl);
+            return resolved.toString();
+        } catch (MalformedURLException e) {
+            return "";
         }
     }
     
@@ -333,6 +642,10 @@ private void addImage(String imageUrl, Element imgElement, String pageUrl) {
      * @return true if it's an image URL, false otherwise
      */
     private boolean isImageUrl(String url) {
+        if (url == null || url.isEmpty()) {
+            return false;
+        }
+        
         String lowerUrl = url.toLowerCase();
         return lowerUrl.endsWith(".jpg") || 
                lowerUrl.endsWith(".jpeg") || 
@@ -354,6 +667,13 @@ private void addImage(String imageUrl, Element imgElement, String pageUrl) {
         Elements linkElements = document.select("a[href]");
         for (Element link : linkElements) {
             String linkUrl = link.absUrl("href");
+            // Skip empty links, javascript:, mailto:, tel:, etc.
+            if (linkUrl.isEmpty() || linkUrl.startsWith("javascript:") || 
+                linkUrl.startsWith("mailto:") || linkUrl.startsWith("tel:") || 
+                linkUrl.startsWith("#")) {
+                continue;
+            }
+            
             // Skip image URLs as they've already been processed
             if (!isImageUrl(linkUrl)) {
                 queueUrl(linkUrl);
@@ -364,14 +684,18 @@ private void addImage(String imageUrl, Element imgElement, String pageUrl) {
         Elements iframeElements = document.select("iframe[src]");
         for (Element iframe : iframeElements) {
             String srcUrl = iframe.absUrl("src");
-            queueUrl(srcUrl);
+            if (!srcUrl.isEmpty()) {
+                queueUrl(srcUrl);
+            }
         }
         
         // Extract form actions
         Elements formElements = document.select("form[action]");
         for (Element form : formElements) {
             String actionUrl = form.absUrl("action");
-            queueUrl(actionUrl);
+            if (!actionUrl.isEmpty()) {
+                queueUrl(actionUrl);
+            }
         }
     }
     
@@ -403,11 +727,28 @@ private void addImage(String imageUrl, Element imgElement, String pageUrl) {
     private boolean isSameDomain(String url) {
         try {
             URL urlObj = new URL(url);
-            String urlDomain = urlObj.getProtocol() + "://" + urlObj.getHost();
-            return domain.equals(urlDomain);
+            String urlDomain = normalizeHost(urlObj.getHost());
+            URL baseUrlObj = new URL(domain);
+            String baseDomain = normalizeHost(baseUrlObj.getHost());
+            
+            return urlObj.getProtocol().equals(baseUrlObj.getProtocol()) && 
+                  urlDomain.equals(baseDomain);
         } catch (MalformedURLException e) {
             return false;
         }
+    }
+    
+    /**
+     * Normalize hostname (e.g., remove www prefix)
+     * 
+     * @param host The hostname to normalize
+     * @return Normalized hostname
+     */
+    private String normalizeHost(String host) {
+        if (host.startsWith("www.")) {
+            return host.substring(4);
+        }
+        return host;
     }
 
     /**
@@ -419,38 +760,195 @@ private void addImage(String imageUrl, Element imgElement, String pageUrl) {
     private String extractDomain(String url) {
         try {
             URL urlObj = new URL(url);
-            return urlObj.getProtocol() + "://" + urlObj.getHost();
+            String protocol = urlObj.getProtocol();
+            String host = normalizeHost(urlObj.getHost());
+            return protocol + "://" + host;
         } catch (MalformedURLException e) {
             // If URL is malformed, return the original URL as a fallback
             return url;
         }
     }
+    
+    /**
+     * Get the depth of a URL (number of path segments)
+     * 
+     * @param url The URL to check
+     * @return The depth
+     */
+    private int getUrlDepth(String url) {
+        try {
+            URL urlObj = new URL(url);
+            String path = urlObj.getPath();
+            if (path == null || path.isEmpty() || path.equals("/")) {
+                return 0;
+            }
+            
+            // Count slashes in the path
+            int depth = 0;
+            for (int i = 0; i < path.length(); i++) {
+                if (path.charAt(i) == '/') {
+                    depth++;
+                }
+            }
+            return depth;
+        } catch (MalformedURLException e) {
+            return 0;
+        }
+    }
 
     /**
-     * Normalize URL by removing fragments and unnecessary parts
+     * Canonicalize URL to ensure consistent representation
      * 
-     * @param url The URL to normalize
-     * @return Normalized URL
+     * @param url The URL to canonicalize
+     * @return Canonicalized URL
      */
-    private String normalizeUrl(String url) {
+    private String canonicalizeUrl(String url) {
+        if (url == null || url.isEmpty()) {
+            return "";
+        }
+        
+        try {
+            // Ensure URL has protocol
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                url = "https://" + url;
+            }
+            
+            // Parse URL
+            URL urlObj = new URL(url);
+            String protocol = urlObj.getProtocol();
+            String host = normalizeHost(urlObj.getHost());
+            int port = urlObj.getPort();
+            String path = urlObj.getPath();
+            String query = urlObj.getQuery();
+            
+            // Normalize path: ensure it starts with / and handle default pages
+            if (path == null || path.isEmpty()) {
+                path = "/";
+            } else if (path.endsWith("/index.html") || path.endsWith("/index.php") || 
+                      path.endsWith("/index.asp") || path.endsWith("/index.jsp") ||
+                      path.endsWith("/default.html") || path.endsWith("/default.php") ||
+                      path.endsWith("/default.asp") || path.endsWith("/default.jsp") ||
+                      path.endsWith("/home.html") || path.endsWith("/home.php") ||
+                      path.endsWith("/home.asp") || path.endsWith("/home.jsp")) {
+                // Replace with directory root
+                path = path.substring(0, path.lastIndexOf('/') + 1);
+            }
+            
+            // Remove trailing slash from path except for root
+            if (path.length() > 1 && path.endsWith("/")) {
+                path = path.substring(0, path.length() - 1);
+            }
+            
+            // Clean query parameters
+            String cleanQuery = cleanQueryParameters(query);
+            
+            // Build canonicalized URL
+            StringBuilder result = new StringBuilder();
+            result.append(protocol).append("://").append(host);
+            
+            if (port != -1 && port != 80 && port != 443) {
+                result.append(":").append(port);
+            }
+            
+            result.append(path);
+            
+            if (cleanQuery != null && !cleanQuery.isEmpty()) {
+                result.append("?").append(cleanQuery);
+            }
+            
+            return result.toString();
+            
+        } catch (MalformedURLException e) {
+            // If parsing fails, return normalized version
+            return normalizeUrl(url);
+        }
+    }
+    
+    /**
+     * Clean query parameters by removing tracking parameters
+     * 
+     * @param query The query string
+     * @return Cleaned query string
+     */
+    private String cleanQueryParameters(String query) {
+        if (query == null || query.isEmpty()) {
+            return null;
+        }
+        
+        StringBuilder result = new StringBuilder();
+        String[] pairs = query.split("&");
+        boolean first = true;
+        
+        for (String pair : pairs) {
+            // Skip empty pairs
+            if (pair.isEmpty()) {
+                continue;
+            }
+            
+            // Split parameter name and value
+            String[] parts = pair.split("=", 2);
+            String name = parts[0];
+            
+            // Skip ignored parameters
+            if (IGNORED_QUERY_PARAMS.contains(name.toLowerCase())) {
+                continue;
+            }
+            
+            // Add parameter to result
+            if (!first) {
+                result.append("&");
+            }
+            result.append(pair);
+            first = false;
+        }
+        
+        return result.toString();
+    }
+    
+    
+    /**
+ * Normalize URL by removing fragments, query parameters, and standardizing format
+ * 
+ * @param url The URL to normalize
+ * @return Normalized URL
+ */
+private String normalizeUrl(String url) {
+    try {
         // Remove fragments
+        URL urlObj = new URL(url);
+        String protocol = urlObj.getProtocol();
+        String host = normalizeHost(urlObj.getHost());
+        String path = urlObj.getPath();
+        
+        // Normalize path
+        if (path == null || path.isEmpty()) {
+            path = "/";
+        }
+        
+        // Remove trailing slash for consistency, except for root
+        if (path.length() > 1 && path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        
+        // Reconstruct URL without query and fragment
+        return protocol + "://" + host + path;
+        
+    } catch (MalformedURLException e) {
+        // Fallback to basic normalization
+        url = url.toLowerCase().trim();
         int fragmentIndex = url.indexOf('#');
         if (fragmentIndex > 0) {
             url = url.substring(0, fragmentIndex);
         }
         
-        // Ensure URL has protocol
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            url = "https://" + url;
-        }
-        
-        // Remove trailing slash if present
+        // Remove trailing slash
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
         
         return url;
     }
+}
 
     /**
      * Check if the crawler is currently running
