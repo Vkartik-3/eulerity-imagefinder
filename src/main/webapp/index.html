@@ -21,6 +21,10 @@
             --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             --box-shadow-hover: 0 12px 16px rgba(0, 0, 0, 0.15);
             --transition: all 0.3s ease;
+            --dark-mode-background: #1e1e2e;
+            --dark-mode-card-bg: #282c34;
+            --dark-mode-text: #f0f0f0;
+            --dark-mode-secondary: #61dafb;
         }
 
         * {
@@ -98,7 +102,86 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(74, 134, 232, 0.2);
         }
-
+        body.dark-mode {
+            background-color: var(--dark-mode-background);
+            color: var(--dark-mode-text);
+        }
+        
+        body.dark-mode .card {
+            background-color: var(--dark-mode-card-bg);
+            color: var(--dark-mode-text);
+        }
+        
+        body.dark-mode .image-card {
+            background-color: var(--dark-mode-card-bg);
+            border: 1px solid #3a3a4a;
+        }
+        
+        body.dark-mode .image-container {
+            background-color: #1a1a2e;
+        }
+        
+        body.dark-mode .image-url,
+        body.dark-mode .image-dimensions,
+        body.dark-mode .image-page-found {
+            color: var(--dark-mode-text);
+            opacity: 0.8;
+        }
+        
+        body.dark-mode .filter-btn {
+            background-color: var(--dark-mode-card-bg);
+            border-color: #3a3a4a;
+            color: var(--dark-mode-text);
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: var(--primary-color);
+            color: white;
+            box-shadow: var(--box-shadow);
+        }
+        
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--box-shadow);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 99;
+        }
+        
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            background-color: var(--primary-hover);
+        }
         .clear-button {
             position: absolute;
             right: 10px;
@@ -289,13 +372,14 @@
         }
 
         .image-card {
-            background-color: white;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            box-shadow: var(--box-shadow);
-            transition: var(--transition);
             position: relative;
             height: 300px;
+            overflow: hidden;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
+            background-color: white;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
         }
@@ -303,23 +387,35 @@
         .image-card:hover {
             transform: translateY(-5px);
             box-shadow: var(--box-shadow-hover);
+            border-color: var(--primary-color);
         }
+        
 
         .image-container {
             height: 200px;
+            position: relative;
             overflow: hidden;
+            background-color: #f5f5f5;
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #f5f5f5;
-            position: relative;
+        }
+        .image-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(0deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 50%);
+            pointer-events: none;
         }
 
         .image-container img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, filter 0.3s ease;
         }
 
         .image-card:hover .image-container img {
@@ -375,39 +471,57 @@
             padding-top: 10px;
         }
         
-        .download-btn {
-            padding: 6px 12px;
-            background-color: var(--secondary-color);
-            color: white;
+        .download-btn, .view-btn {
+            padding: 8px 15px;
+            font-weight: 500;
+            min-width: 100px;
             text-align: center;
-            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
             border-radius: var(--border-radius);
             font-size: 12px;
-            transition: var(--transition);
+        }
+        .download-btn {
+            background-color: var(--secondary-color);
+            color: white;
             border: none;
+            text-decoration: none;
             cursor: pointer;
         }
-        
+        .download-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .download-btn:hover::before {
+            left: 100%;
+        }
         .download-btn:hover {
             background-color: var(--secondary-hover);
         }
         
         .view-btn {
-            padding: 6px 12px;
             background-color: transparent;
             color: var(--primary-color);
             border: 1px solid var(--primary-color);
-            text-align: center;
-            text-decoration: none;
-            border-radius: var(--border-radius);
-            font-size: 12px;
-            transition: var(--transition);
             cursor: pointer;
         }
         
         .view-btn:hover {
             background-color: var(--primary-color);
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         .error-message {
@@ -578,6 +692,8 @@
     </style>
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+<button id="theme-toggle" class="theme-toggle"><i class="fas fa-moon"></i></button>
     <div class="container">
         <header>
             <h1>Eulerity Image Finder</h1>
@@ -1215,6 +1331,53 @@
                 }, 5000);
             }
         });
+        // Dark mode toggle
+const themeToggle = document.getElementById('theme-toggle');
+const body = document.body;
+const themeIcon = themeToggle.querySelector('i');
+
+// Check for saved theme preference
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'dark') {
+    body.classList.add('dark-mode');
+    themeIcon.classList.remove('fa-moon');
+    themeIcon.classList.add('fa-sun');
+}
+
+themeToggle.addEventListener('click', () => {
+    body.classList.toggle('dark-mode');
+    
+    // Update icon
+    if (body.classList.contains('dark-mode')) {
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+        localStorage.setItem('theme', 'dark');
+    } else {
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+        localStorage.setItem('theme', 'light');
+    }
+});
+
+// Back to top functionality
+const backToTopBtn = document.getElementById('back-to-top');
+
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+        backToTopBtn.classList.add('visible');
+    } else {
+        backToTopBtn.classList.remove('visible');
+    }
+});
+
+backToTopBtn.addEventListener('click', () => {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+});
     </script>
+    <!-- Back to Top Button -->
+<button id="back-to-top" class="back-to-top"><i class="fas fa-arrow-up"></i></button>
 </body>
 </html>
