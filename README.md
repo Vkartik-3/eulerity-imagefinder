@@ -31,6 +31,14 @@ Eulerity Image Finder is a sophisticated web crawler application designed to eff
 ```
 IMAGEFINDER 2/
 │
+├── docs/
+│   └── images/
+│       ├── Dark-mode.png
+│       ├── Light-mode.png
+│       ├── logos-with.png
+│       ├── without-logos.png
+│       └── percentage-bar.png
+│
 ├── src/
 │   ├── main/
 │   │   ├── java/com/eulerity/hackathon/imagefinder/
