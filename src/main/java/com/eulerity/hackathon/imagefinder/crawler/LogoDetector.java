@@ -25,6 +25,9 @@ public class LogoDetector {
         LOGO_TERMS.add("logotype");
         LOGO_TERMS.add("identity");
         LOGO_TERMS.add("branding");
+        LOGO_TERMS.add("favicon");
+LOGO_TERMS.add("mark");
+
     }
     
     // File extensions commonly used for logos
@@ -112,6 +115,12 @@ public class LogoDetector {
         }
         
         // Return true if confidence is above threshold
+        // Fallback: if no confidence indicators, but it's an SVG, assume it's a logo
+if (confidence == 0 && lowerUrl.endsWith(".svg")) {
+    if (DEBUG) System.out.println("Fallback: treating SVG as logo due to format");
+    return true;
+}
+
         return confidence >= 2; // Require at least 2 positive indicators
     }
     
@@ -268,8 +277,12 @@ public class LogoDetector {
         
         // Check for common logo sizes
         if (COMMON_LOGO_SIZES.contains(width) || COMMON_LOGO_SIZES.contains(height)) {
-            score++;
-            if (DEBUG) System.out.println("Image has common logo dimension: " + width + "x" + height);
+            // Bonus: Give credit to exactly square small logos
+if (width == height && width <= 128) {
+    score++;
+    if (DEBUG) System.out.println("Square small logo detected: " + width + "x" + height);
+}
+
         }
         
         // Check for small image (logos tend to be smaller)
@@ -303,7 +316,7 @@ public class LogoDetector {
         }
         
         // Check for company name followed by "logo"
-        Pattern companyLogoPattern = Pattern.compile(".*\\b([a-z0-9]+ logo)\\b.*");
+        Pattern companyLogoPattern = Pattern.compile(".*\\b([a-z0-9\\-\\s]+\\s+logo)\\b.*");
         if (companyLogoPattern.matcher(lowerAlt).matches()) {
             if (DEBUG) System.out.println("Found company logo pattern in alt text: " + lowerAlt);
             return 3; // Very strong indicator

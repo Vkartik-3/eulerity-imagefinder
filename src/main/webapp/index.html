@@ -937,6 +937,8 @@ body.dark-mode .modal-content {
             <strong>Found on page:</strong> <span id="modal-page">Unknown</span>
           </p>
           <p><strong>Is Logo:</strong> <span id="modal-logo">No</span></p>
+<p><strong>Open:</strong> <a id="modal-open-link" href="#" target="_blank" rel="noopener">View full image</a></p>
+
         </div>
       </div>
     </div>
@@ -1067,45 +1069,46 @@ window.addEventListener("scroll", () => {
          * Start the crawling process
          */
         function startCrawling(e) {
-          e.preventDefault();
+            e.preventDefault();
 
-          if (crawlInProgress) {
-            return;
-          }
-
-          // Get form data
-          const url = urlInput.value.trim();
-          const maxPages = document.getElementById("maxPages").value;
-          const threadCount = document.getElementById("threadCount").value;
-          const crawlDelay = document.getElementById("crawlDelay").value;
-          const detectLogos = document.getElementById("detectLogos").checked;
-
-          // Validate URL
-          if (!url || !isValidUrl(url)) {
-            showError("Please enter a valid URL");
-            return;
-          }
-
-          // Hide previous results and messages
-          hideMessages();
-          resultsContainer.style.display = "none";
-          resultsGrid.innerHTML = "";
-          imageResults = [];
-
-          // Show status card
-          statusCard.style.display = "block";
-          progressBar.style.width = "0%";
-          statusText.textContent = "Initializing crawler...";
-
-          // Disable form fields
-          toggleFormFields(true);
-          crawlInProgress = true;
-
-          // Show toast notification
-          showToast("Crawling started", "info");
+            if (crawlInProgress) {
+                return;
+            }
+        
+            // Get form data
+            const url = urlInput.value.trim();
+            const maxPages = document.getElementById("maxPages").value;
+            const threadCount = document.getElementById("threadCount").value;
+            const crawlDelay = document.getElementById("crawlDelay").value;
+            const detectLogos = document.getElementById("detectLogos").checked;
+        
+            // Validate URL
+            if (!url || !isValidUrl(url)) {
+                showError("Please enter a valid URL");
+                return;
+            }
+        
+            // Hide previous results and messages
+            hideMessages();
+            resultsContainer.style.display = "none";
+            resultsGrid.innerHTML = "";
+            imageResults = [];
+        
+            // Show status card
+            statusCard.style.display = "block";
+            progressBar.style.width = "0%";
+            statusText.textContent = "Initializing crawler...";
+        
+            // Disable form fields
+            toggleFormFields(true);
+            crawlInProgress = true;
+        
+            // Show toast notification
+            showToast("Crawling started", "info");
 
           // Make API request
           const apiUrl = `/main?url=${encodeURIComponent(url)}&maxPages=${maxPages}&threadCount=${threadCount}&crawlDelay=${crawlDelay}&detectLogos=${detectLogos}`;
+
 
 
           fetch(apiUrl, {
@@ -1246,7 +1249,13 @@ window.addEventListener("scroll", () => {
             // Create image element
             const img = document.createElement("img");
             img.src = image.url;
-            img.alt = image.altText || `Image ${index + 1}`;
+            try {
+                const hostname = new URL(image.url).hostname;
+                img.alt = image.altText || `Image from ${hostname}`;
+              } catch {
+                img.alt = image.altText || `Image ${index + 1}`;
+              }
+              
             img.loading = "lazy";
             img.onerror = function () {
               this.src =
@@ -1353,38 +1362,53 @@ window.addEventListener("scroll", () => {
         /**
          * Open image modal with details
          */
-        function openImageModal(image) {
-          // Handle image load error first, before setting src
-          modalImage.onerror = function () {
-            this.src =
-              "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20fill%3D%22%23f5f5f5%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.35em%22%20text-anchor%3D%22middle%22%20x%3D%2250%22%20y%3D%2250%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E";
-          };
-
-          // Now set the src
-          modalImage.src = image.url;
-          modalUrl.textContent = image.url;
-
-          // Set dimensions
-          if (image.width > 0 && image.height > 0) {
-            modalDimensions.textContent = `${image.width} × ${image.height}`;
-          } else {
-            modalDimensions.textContent = "Unknown";
+         function openImageModal(image) {
+            // Handle image load error first, before setting src
+            modalImage.onerror = function () {
+              this.src =
+                "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20fill%3D%22%23f5f5f5%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.35em%22%20text-anchor%3D%22middle%22%20x%3D%2250%22%20y%3D%2250%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E";
+            };
+          
+            if (image.url) {
+              modalImage.src = image.url;
+              modalUrl.textContent = image.url;
+          
+              // ✅ ADD this block
+              const modalOpenLink = document.getElementById("modal-open-link");
+              modalOpenLink.href = image.url;
+              modalOpenLink.textContent = "View full image";
+            } else {
+              modalImage.src = "";
+              modalUrl.textContent = "Unavailable";
+          
+              // ✅ Fallback for missing image URL
+              const modalOpenLink = document.getElementById("modal-open-link");
+              modalOpenLink.href = "#";
+              modalOpenLink.textContent = "Link not available";
+            }
+          
+            // Set dimensions
+            if (image.width > 0 && image.height > 0) {
+              modalDimensions.textContent = `${image.width} × ${image.height}`;
+            } else {
+              modalDimensions.textContent = "Unknown";
+            }
+          
+            // Set page found
+            if (image.pageFound) {
+              modalPage.textContent = image.pageFound;
+            } else {
+              modalPage.textContent = "Unknown";
+            }
+          
+            // Set logo status
+            modalLogo.textContent =
+              image.isLogo === true || image.logo === true ? "Yes" : "No";
+          
+            // Show modal
+            modal.style.display = "flex";
           }
-
-          // Set page found
-          if (image.pageFound) {
-            modalPage.textContent = image.pageFound;
-          } else {
-            modalPage.textContent = "Unknown";
-          }
-
-          // Set logo status
-          modalLogo.textContent =
-            image.isLogo === true || image.logo === true ? "Yes" : "No";
-
-          // Show modal
-          modal.style.display = "flex";
-        }
+          
         /**
          * Apply both logo filter and search filter
          */
@@ -1402,6 +1426,7 @@ window.addEventListener("scroll", () => {
               activeFilter === "all" ||
               (activeFilter === "logo" && card.dataset.isLogo === "true");
 
+              
             // Check search filter with enhanced searching
             const matchesSearch =
               !searchQuery ||

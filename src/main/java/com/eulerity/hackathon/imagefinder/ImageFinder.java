@@ -67,18 +67,25 @@ public class ImageFinder extends HttpServlet {
         int maxPages = parseIntParam(req, "maxPages", DEFAULT_MAX_PAGES);
         int threadCount = parseIntParam(req, "threadCount", DEFAULT_THREAD_COUNT);
         int crawlDelay = parseIntParam(req, "crawlDelay", DEFAULT_CRAWL_DELAY_MS);
-        boolean detectLogos = Boolean.parseBoolean(req.getParameter("detectLogos"));
+        
+        // Fix the boolean parsing to handle checkbox state correctly
+        String detectLogosParam = req.getParameter("detectLogos");
+        boolean detectLogos = "true".equals(detectLogosParam) || "on".equals(detectLogosParam);
+        
         boolean refresh = Boolean.parseBoolean(req.getParameter("refresh"));
 
+        // Create a composite cache key that includes URL and logo detection setting
+        String cacheKey = createCacheKey(url, detectLogos);
+
         try {
-            // Check cache
-            if (!refresh && resultsCache.containsKey(url)) {
-                resp.getWriter().print(GSON.toJson(resultsCache.get(url)));
+            // Check cache using composite key
+            if (!refresh && resultsCache.containsKey(cacheKey)) {
+                resp.getWriter().print(GSON.toJson(resultsCache.get(cacheKey)));
                 return;
             }
         
             // Create and start crawler
-            WebCrawler crawler = new WebCrawler(url, maxPages, threadCount, crawlDelay);
+            WebCrawler crawler = new WebCrawler(url, maxPages, threadCount, crawlDelay, detectLogos);
             activeCrawlers.put(url, crawler);
         
             // Crawl and process images
@@ -91,7 +98,7 @@ public class ImageFinder extends HttpServlet {
                 ImageResult result = metadata != null 
                     ? new ImageResult(
                         imageUrl, 
-                        metadata.isLogo(), 
+                        detectLogos && metadata.isLogo(), // Only set as logo if detection was enabled
                         metadata.getAltText(), 
                         metadata.getWidth(), 
                         metadata.getHeight(), 
@@ -102,8 +109,8 @@ public class ImageFinder extends HttpServlet {
                 results.add(result);
             }
         
-            // Cache and return results
-            resultsCache.put(url, results);
+            // Cache with composite key and return results
+            resultsCache.put(cacheKey, results);
             resp.getWriter().print(GSON.toJson(results));
         
         } catch (Exception e) {
@@ -135,10 +142,24 @@ public class ImageFinder extends HttpServlet {
         }
     }
 
+    /**
+     * Create a cache key that combines URL and logo detection status
+     * 
+     * @param url The URL
+     * @param detectLogos Logo detection flag
+     * @return A composite cache key
+     */
+    private String createCacheKey(String url, boolean detectLogos) {
+        return url + "_detectLogos_" + detectLogos;
+    }
+
     private ImageResult createFallbackResult(String imageUrl, boolean detectLogos) {
         ImageResult result = new ImageResult(imageUrl);
         if (detectLogos) {
             result.setLogo(LogoDetector.isLikelyLogo(imageUrl));
+        } else {
+            // Explicitly set to false when logo detection is disabled
+            result.setLogo(false);
         }
         return result;
     }
@@ -150,11 +171,25 @@ public class ImageFinder extends HttpServlet {
         if (crawler != null && crawler.isRunning()) {
             status.put("status", "running");
             status.put("pagesCrawled", crawler.getPagesCrawled());
-        } else if (resultsCache.containsKey(url)) {
-            status.put("status", "completed");
-            status.put("resultsCount", resultsCache.get(url).size());
         } else {
-            status.put("status", "not_found");
+            // Check if any cache entries exist for this URL (regardless of logo detection setting)
+            boolean foundInCache = false;
+            int resultCount = 0;
+            
+            for (String key : resultsCache.keySet()) {
+                if (key.startsWith(url + "_detectLogos_")) {
+                    foundInCache = true;
+                    resultCount = resultsCache.get(key).size();
+                    break;
+                }
+            }
+            
+            if (foundInCache) {
+                status.put("status", "completed");
+                status.put("resultsCount", resultCount);
+            } else {
+                status.put("status", "not_found");
+            }
         }
         
         resp.getWriter().print(GSON.toJson(status));
@@ -180,11 +215,27 @@ public class ImageFinder extends HttpServlet {
         if ("all".equals(url)) {
             resultsCache.clear();
             result.put("status", "success");
-        } else if (resultsCache.containsKey(url)) {
-            resultsCache.remove(url);
-            result.put("status", "success");
         } else {
-            result.put("status", "not_found");
+            // Clear all cache entries for this URL (regardless of logo detection setting)
+            boolean removed = false;
+            List<String> keysToRemove = new ArrayList<>();
+            
+            for (String key : resultsCache.keySet()) {
+                if (key.startsWith(url + "_detectLogos_")) {
+                    keysToRemove.add(key);
+                    removed = true;
+                }
+            }
+            
+            for (String key : keysToRemove) {
+                resultsCache.remove(key);
+            }
+            
+            if (removed) {
+                result.put("status", "success");
+            } else {
+                result.put("status", "not_found");
+            }
         }
         
         resp.getWriter().print(GSON.toJson(result));

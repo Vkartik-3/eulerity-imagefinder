@@ -44,6 +44,7 @@ public class WebCrawler {
     private final AtomicInteger pagesCrawled;
     private final Object lock = new Object();
     private boolean isRunning;
+    private final boolean enableLogoDetection;
     private RobotsTxtParser robotsTxtParser;
     
     // Define allowed schemes and content types
@@ -77,7 +78,7 @@ public class WebCrawler {
      * @param threadCount Number of threads to use
      * @param crawlDelayMs Delay between requests in milliseconds (to be "friendly")
      */
-    public WebCrawler(String url, int maxPages, int threadCount, int crawlDelayMs) {
+    public WebCrawler(String url, int maxPages, int threadCount, int crawlDelayMs,boolean enableLogoDetection) {
         this.baseUrl = canonicalizeUrl(url);
         this.domain = extractDomain(this.baseUrl);
         this.visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -93,6 +94,8 @@ public class WebCrawler {
         
         // Initialize robots.txt parser
         this.robotsTxtParser = new RobotsTxtParser(domain);
+        this.enableLogoDetection = enableLogoDetection;
+
     }
 
     /**
@@ -243,227 +246,228 @@ public class WebCrawler {
     }
 
     /**
- * Process a single page - extract images and find links
- * 
- * @param url The URL to process
- */
-private void processSinglePage(String url) {
-    // Increment counter
-    pagesCrawled.incrementAndGet();
-    
-    try {
-        // Initialize redirect tracking for this URL
-        Set<String> redirectsVisited = new HashSet<>();
-        redirectsVisited.add(canonicalizeUrl(url));
-        redirectChains.put(url, redirectsVisited);
+     * Process a single page - extract images and find links
+     * 
+     * @param url The URL to process
+     */
+    private void processSinglePage(String url) {
+        // Increment counter
+        pagesCrawled.incrementAndGet();
         
-        // Configure connection with custom settings
-        Connection connection = Jsoup.connect(url)
-                .userAgent("Eulerity-Crawler/1.0")
-                .timeout(CONNECTION_TIMEOUT_MS)
-                .maxBodySize(1024 * 1024) // 1MB max body size
-                .followRedirects(false) // Handle redirects manually
-                .ignoreContentType(true) // Check content type ourselves
-                .ignoreHttpErrors(false);
-        
-        // Use retry mechanism first
-        Connection.Response response = null;
         try {
-            response = executeWithRetry(connection, 3); // Try up to 3 times
-            if (response == null) {
-                return; // Failed to get response after retries
-            }
+            // Initialize redirect tracking for this URL
+            Set<String> redirectsVisited = new HashSet<>();
+            redirectsVisited.add(canonicalizeUrl(url));
+            redirectChains.put(url, redirectsVisited);
             
-            // Continue with redirect handling
-            response = executeRequestWithRedirects(connection, url, MAX_REDIRECTS);
-            if (response == null) {
-                return; // Failed to get response after redirects
-            }
-        } catch (IOException e) {
-            System.err.println("Error processing URL: " + url + " - " + e.getMessage());
-            return;
-        }
-        
-        // Get the final URL after possible redirects
-        String finalUrl = response.url().toString();
-        String canonicalFinalUrl = canonicalizeUrl(finalUrl);
-        
-        // If the URL was redirected, update the visited URLs
-        if (!url.equals(finalUrl)) {
-            // Add the redirect target to visited URLs
-            synchronized (lock) {
-                visitedUrls.add(canonicalFinalUrl);
-            }
-            
-            // Check if the redirect target is in the same domain
-            if (!isSameDomain(canonicalFinalUrl)) {
-                System.out.println("Skipping URL (redirect to different domain): " + canonicalFinalUrl);
-                return;
-            }
-        }
-        
-        // Check content type
-        String contentType = response.contentType();
-        if (contentType == null || !isAllowedContentType(contentType)) {
-            System.out.println("Skipping URL (disallowed content type: " + contentType + "): " + url);
-            return;
-        }
-        
-        // Parse the document from the response
-        Document document = response.parse();
-
-        // Extract images
-        extractImages(document, url);
-
-        // Extract links for further crawling
-        extractLinks(document);
-
-    } catch (SocketTimeoutException e) {
-        System.err.println("Error processing URL: " + url + " - Read timed out");
-    } catch (HttpStatusException e) {
-        System.err.println("Error processing URL: " + url + " - HTTP error fetching URL");
-    } catch (IOException e) {
-        System.err.println("Error processing URL: " + url + " - " + e.getMessage());
-    } catch (Exception e) {
-        System.err.println("Unexpected error processing URL: " + url + " - " + e.getMessage());
-    } finally {
-        // Clean up redirect tracking for this URL
-        redirectChains.remove(url);
-    }
-}
-    
-    /**
- * Execute a request and follow redirects manually with improved loop detection
- * 
- * @param connection The JSoup connection
- * @param originalUrl The original URL
- * @param maxRedirects Maximum number of redirects to follow
- * @return The final response or null if failed
- */
-private Connection.Response executeRequestWithRedirects(Connection connection, String originalUrl, int maxRedirects) 
-    throws IOException {
-    String currentUrl = originalUrl;
-    Set<String> visitedUrls = new HashSet<>();
-    
-    for (int redirectCount = 0; redirectCount < maxRedirects; redirectCount++) {
-        try {
-            // Execute the request
-            Connection.Response response = connection.execute();
-            
-            int statusCode = response.statusCode();
-            
-            // Check if it's a redirect status code
-            if (!(statusCode >= 300 && statusCode < 400)) {
-                return response; // Not a redirect, return the response
-            }
-            
-            // Get the redirect location
-            String location = response.header("Location");
-            if (location == null || location.isEmpty()) {
-                return response; // No valid redirect location
-            }
-            
-            // Resolve relative redirects
-            URL base = new URL(currentUrl);
-            URL redirectUrl = new URL(base, location);
-            String redirectUrlStr = redirectUrl.toString();
-            
-            // Normalize the URLs for better comparison
-            String normalizedRedirectUrl = normalizeUrl(redirectUrlStr);
-            
-            // Better redirect loop detection with normalized URLs
-            if (visitedUrls.contains(normalizedRedirectUrl)) {
-                System.out.println("Potential redirect loop detected. Stopping at: " + redirectUrlStr);
-                return response; // Return the last valid response instead of null
-            }
-            
-            // Add to visited URLs
-            visitedUrls.add(normalizedRedirectUrl);
-            
-            // Update current URL and connection
-            currentUrl = redirectUrlStr;
-            
-            // Apply a progressive delay between redirects
-            try {
-                Thread.sleep(Math.min(200 * (redirectCount + 1), 2000));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            
-            connection = Jsoup.connect(currentUrl)
-                    .userAgent("Mozilla/5.0 (compatible; EulerityBot/1.0)")
+            // Configure connection with custom settings
+            Connection connection = Jsoup.connect(url)
+                    .userAgent("Eulerity-Crawler/1.0")
                     .timeout(CONNECTION_TIMEOUT_MS)
-                    .maxBodySize(1024 * 1024)
-                    .followRedirects(false)
-                    .ignoreContentType(true)
+                    .maxBodySize(1024 * 1024) // 1MB max body size
+                    .followRedirects(false) // Handle redirects manually
+                    .ignoreContentType(true) // Check content type ourselves
                     .ignoreHttpErrors(false);
             
-        } catch (IOException e) {
-            // If we've already followed some redirects, log and retry with increased timeout
-            if (redirectCount > 0) {
-                System.err.println("Error during redirect handling: " + e.getMessage());
-                try {
-                    // Apply backoff before retry
-                    Thread.sleep(1000);
-                    // Retry with increased timeout
-                    connection = connection.timeout(CONNECTION_TIMEOUT_MS * 2);
-                    return connection.execute();
-                } catch (IOException finalError) {
-                    throw finalError;
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new IOException("Interrupted during redirect handling");
+            // Use retry mechanism first
+            Connection.Response response = null;
+            try {
+                response = executeWithRetry(connection, 3); // Try up to 3 times
+                if (response == null) {
+                    return; // Failed to get response after retries
                 }
-            } else {
-                throw e;
+                
+                // Continue with redirect handling
+                response = executeRequestWithRedirects(connection, url, MAX_REDIRECTS);
+                if (response == null) {
+                    return; // Failed to get response after redirects
+                }
+            } catch (IOException e) {
+                System.err.println("Error processing URL: " + url + " - " + e.getMessage());
+                return;
             }
+            
+            // Get the final URL after possible redirects
+            String finalUrl = response.url().toString();
+            String canonicalFinalUrl = canonicalizeUrl(finalUrl);
+            
+            // If the URL was redirected, update the visited URLs
+            if (!url.equals(finalUrl)) {
+                // Add the redirect target to visited URLs
+                synchronized (lock) {
+                    visitedUrls.add(canonicalFinalUrl);
+                }
+                
+                // Check if the redirect target is in the same domain
+                if (!isSameDomain(canonicalFinalUrl)) {
+                    System.out.println("Skipping URL (redirect to different domain): " + canonicalFinalUrl);
+                    return;
+                }
+            }
+            
+            // Check content type
+            String contentType = response.contentType();
+            if (contentType == null || !isAllowedContentType(contentType)) {
+                System.out.println("Skipping URL (disallowed content type: " + contentType + "): " + url);
+                return;
+            }
+            
+            // Parse the document from the response
+            Document document = response.parse();
+
+            // Extract images
+            extractImages(document, url);
+
+            // Extract links for further crawling
+            extractLinks(document);
+
+        } catch (SocketTimeoutException e) {
+            System.err.println("Error processing URL: " + url + " - Read timed out");
+        } catch (HttpStatusException e) {
+            System.err.println("Error processing URL: " + url + " - HTTP error fetching URL");
+        } catch (IOException e) {
+            System.err.println("Error processing URL: " + url + " - " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Unexpected error processing URL: " + url + " - " + e.getMessage());
+        } finally {
+            // Clean up redirect tracking for this URL
+            redirectChains.remove(url);
         }
     }
     
-    // If we get here, we've hit the maximum redirects
-    System.err.println("Maximum redirects reached for URL: " + currentUrl);
-    return null;
-}
     /**
- * Execute a request with retry mechanism
- * 
- * @param connection The JSoup connection
- * @param maxRetries Maximum number of retries
- * @return The response or null if all retries failed
- * @throws IOException If an I/O error occurs
- */
-private Connection.Response executeWithRetry(Connection connection, int maxRetries) throws IOException {
-    IOException lastException = null;
-    
-    for (int attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-            // Apply backoff if this is a retry
-            if (attempt > 0) {
+     * Execute a request and follow redirects manually with improved loop detection
+     * 
+     * @param connection The JSoup connection
+     * @param originalUrl The original URL
+     * @param maxRedirects Maximum number of redirects to follow
+     * @return The final response or null if failed
+     */
+    private Connection.Response executeRequestWithRedirects(Connection connection, String originalUrl, int maxRedirects) 
+        throws IOException {
+        String currentUrl = originalUrl;
+        Set<String> visitedUrls = new HashSet<>();
+        
+        for (int redirectCount = 0; redirectCount < maxRedirects; redirectCount++) {
+            try {
+                // Execute the request
+                Connection.Response response = connection.execute();
+                
+                int statusCode = response.statusCode();
+                
+                // Check if it's a redirect status code
+                if (!(statusCode >= 300 && statusCode < 400)) {
+                    return response; // Not a redirect, return the response
+                }
+                
+                // Get the redirect location
+                String location = response.header("Location");
+                if (location == null || location.isEmpty()) {
+                    return response; // No valid redirect location
+                }
+                
+                // Resolve relative redirects
+                URL base = new URL(currentUrl);
+                URL redirectUrl = new URL(base, location);
+                String redirectUrlStr = redirectUrl.toString();
+                
+                // Normalize the URLs for better comparison
+                String normalizedRedirectUrl = normalizeUrl(redirectUrlStr);
+                
+                // Better redirect loop detection with normalized URLs
+                if (visitedUrls.contains(normalizedRedirectUrl)) {
+                    System.out.println("Potential redirect loop detected. Stopping at: " + redirectUrlStr);
+                    return response; // Return the last valid response instead of null
+                }
+                
+                // Add to visited URLs
+                visitedUrls.add(normalizedRedirectUrl);
+                
+                // Update current URL and connection
+                currentUrl = redirectUrlStr;
+                
+                // Apply a progressive delay between redirects
                 try {
-                    // Exponential backoff with jitter
-                    long backoffMs = Math.min(1000 * (long)Math.pow(2, attempt - 1), 10000);
-                    backoffMs += new java.util.Random().nextInt(1000); // Add jitter
-                    Thread.sleep(backoffMs);
-                    System.out.println("Retrying request (attempt " + (attempt + 1) + "/" + maxRetries + ")");
+                    Thread.sleep(Math.min(200 * (redirectCount + 1), 2000));
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    throw new IOException("Interrupted during retry backoff");
+                }
+                
+                connection = Jsoup.connect(currentUrl)
+                        .userAgent("Mozilla/5.0 (compatible; EulerityBot/1.0)")
+                        .timeout(CONNECTION_TIMEOUT_MS)
+                        .maxBodySize(1024 * 1024)
+                        .followRedirects(false)
+                        .ignoreContentType(true)
+                        .ignoreHttpErrors(false);
+                
+            } catch (IOException e) {
+                // If we've already followed some redirects, log and retry with increased timeout
+                if (redirectCount > 0) {
+                    System.err.println("Error during redirect handling: " + e.getMessage());
+                    try {
+                        // Apply backoff before retry
+                        Thread.sleep(1000);
+                        // Retry with increased timeout
+                        connection = connection.timeout(CONNECTION_TIMEOUT_MS * 2);
+                        return connection.execute();
+                    } catch (IOException finalError) {
+                        throw finalError;
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException("Interrupted during redirect handling");
+                    }
+                } else {
+                    throw e;
                 }
             }
-            
-            return connection.execute();
-        } catch (IOException e) {
-            lastException = e;
-            System.err.println("Request failed (attempt " + (attempt + 1) + "/" + maxRetries + "): " + e.getMessage());
-            
-            // Increase timeout for next attempt
-            connection = connection.timeout(CONNECTION_TIMEOUT_MS * (attempt + 2));
         }
+        
+        // If we get here, we've hit the maximum redirects
+        System.err.println("Maximum redirects reached for URL: " + currentUrl);
+        return null;
     }
     
-    // All retries failed
-    throw lastException != null ? lastException : new IOException("All retries failed");
-}
+    /**
+     * Execute a request with retry mechanism
+     * 
+     * @param connection The JSoup connection
+     * @param maxRetries Maximum number of retries
+     * @return The response or null if all retries failed
+     * @throws IOException If an I/O error occurs
+     */
+    private Connection.Response executeWithRetry(Connection connection, int maxRetries) throws IOException {
+        IOException lastException = null;
+        
+        for (int attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                // Apply backoff if this is a retry
+                if (attempt > 0) {
+                    try {
+                        // Exponential backoff with jitter
+                        long backoffMs = Math.min(1000 * (long)Math.pow(2, attempt - 1), 10000);
+                        backoffMs += new java.util.Random().nextInt(1000); // Add jitter
+                        Thread.sleep(backoffMs);
+                        System.out.println("Retrying request (attempt " + (attempt + 1) + "/" + maxRetries + ")");
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException("Interrupted during retry backoff");
+                    }
+                }
+                
+                return connection.execute();
+            } catch (IOException e) {
+                lastException = e;
+                System.err.println("Request failed (attempt " + (attempt + 1) + "/" + maxRetries + "): " + e.getMessage());
+                
+                // Increase timeout for next attempt
+                connection = connection.timeout(CONNECTION_TIMEOUT_MS * (attempt + 2));
+            }
+        }
+        
+        // All retries failed
+        throw lastException != null ? lastException : new IOException("All retries failed");
+    }
     
     /**
      * Check if the content type is allowed for parsing
@@ -633,16 +637,24 @@ private Connection.Response executeWithRetry(Connection connection, int maxRetri
                     }
                 }
                 
-                // Check if it's a logo using the enhanced detection
-                metadata.setLogo(LogoDetector.isLikelyLogo(
+                // Check if it's a logo using the enhanced detection - ONLY if logo detection is enabled
+                if (enableLogoDetection) {
+                    metadata.setLogo(LogoDetector.isLikelyLogo(
                         imageUrl, 
                         metadata.getWidth(), 
                         metadata.getHeight(), 
                         metadata.getAltText(),
                         pageUrl));
+                } else {
+                    metadata.setLogo(false); // Explicitly set to false when detection is disabled
+                }
             } else {
-                // For non-img elements, check if it's a logo using URL and page context
-                metadata.setLogo(LogoDetector.isLikelyLogo(imageUrl, -1, -1, null, pageUrl));
+                // For non-img elements, check if it's a logo using URL and page context - ONLY if logo detection is enabled
+                if (enableLogoDetection) {
+                    metadata.setLogo(LogoDetector.isLikelyLogo(imageUrl, -1, -1, null, pageUrl));
+                } else {
+                    metadata.setLogo(false); // Explicitly set to false when detection is disabled
+                }
             }
             
             // Store metadata
@@ -981,50 +993,49 @@ private Connection.Response executeWithRetry(Connection connection, int maxRetri
         return result.toString();
     }
     
-    
     /**
- * Normalize URL by removing fragments, query parameters, and standardizing format
- * 
- * @param url The URL to normalize
- * @return Normalized URL
- */
-private String normalizeUrl(String url) {
-    try {
-        // Remove fragments
-        URL urlObj = new URL(url);
-        String protocol = urlObj.getProtocol();
-        String host = normalizeHost(urlObj.getHost());
-        String path = urlObj.getPath();
-        
-        // Normalize path
-        if (path == null || path.isEmpty()) {
-            path = "/";
+     * Normalize URL by removing fragments, query parameters, and standardizing format
+     * 
+     * @param url The URL to normalize
+     * @return Normalized URL
+     */
+    private String normalizeUrl(String url) {
+        try {
+            // Remove fragments
+            URL urlObj = new URL(url);
+            String protocol = urlObj.getProtocol();
+            String host = normalizeHost(urlObj.getHost());
+            String path = urlObj.getPath();
+            
+            // Normalize path
+            if (path == null || path.isEmpty()) {
+                path = "/";
+            }
+            
+            // Remove trailing slash for consistency, except for root
+            if (path.length() > 1 && path.endsWith("/")) {
+                path = path.substring(0, path.length() - 1);
+            }
+            
+            // Reconstruct URL without query and fragment
+            return protocol + "://" + host + path;
+            
+        } catch (MalformedURLException e) {
+            // Fallback to basic normalization
+            url = url.toLowerCase().trim();
+            int fragmentIndex = url.indexOf('#');
+            if (fragmentIndex > 0) {
+                url = url.substring(0, fragmentIndex);
+            }
+            
+            // Remove trailing slash
+            if (url.endsWith("/")) {
+                url = url.substring(0, url.length() - 1);
+            }
+            
+            return url;
         }
-        
-        // Remove trailing slash for consistency, except for root
-        if (path.length() > 1 && path.endsWith("/")) {
-            path = path.substring(0, path.length() - 1);
-        }
-        
-        // Reconstruct URL without query and fragment
-        return protocol + "://" + host + path;
-        
-    } catch (MalformedURLException e) {
-        // Fallback to basic normalization
-        url = url.toLowerCase().trim();
-        int fragmentIndex = url.indexOf('#');
-        if (fragmentIndex > 0) {
-            url = url.substring(0, fragmentIndex);
-        }
-        
-        // Remove trailing slash
-        if (url.endsWith("/")) {
-            url = url.substring(0, url.length() - 1);
-        }
-        
-        return url;
     }
-}
 
     /**
      * Check if the crawler is currently running
