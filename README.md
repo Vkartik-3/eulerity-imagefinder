@@ -8,17 +8,17 @@ Eulerity Image Finder is a sophisticated web crawler application designed to eff
 
 | Dark Mode | Light Mode |
 |-----------|------------|
-| ![Dark Mode Interface](docs/images/Dark mode.png) | ![Light Mode Interface](docs/images/Light mode.png) |
+| ![Dark Mode Interface](docs/images/Dark-mode.png) | ![Light Mode Interface](docs/images/Light-mode.png) |
 
 ### Advanced Image Detection Modes
 
 | With Logos | Without Logos |
 |------------|----------------|
-| ![Images with Logos](docs/images/logos with.png) | ![Images without Logos](docs/images/without logos.png) |
+| ![Images with Logos](docs/images/logos-with.png) | ![Images without Logos](docs/images/without-logos.png) |
 
 ### Detailed Crawl Analytics
 
-![Percentage Bar and Analytics](docs/images/percentage bar.png)
+![Percentage Bar and Analytics](docs/images/percentage-bar.png)
 
 ### Key Visualization Features
 - **Dual Mode Support**: Seamless dark and light mode interfaces
